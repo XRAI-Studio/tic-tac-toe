@@ -161,6 +161,10 @@ html.light .bg-black\/40 { background-color: rgba(255,255,255,0.4); }
 html.light .glow-text { text-shadow: 0 0 10px rgba(0, 180, 255, 0.4); }
 html.light .glow-text-lg { text-shadow: 0 0 14px rgba(0, 180, 255, 0.45), 0 0 28px rgba(0, 140, 210, 0.2); }
 
+/* Navbar links need stronger contrast in light mode */
+html.light nav a:not(.text-\[\#00F0FF\]) { color: #1E293B; }
+html.light nav a:hover { color: #0077C8; }
+
 /* Hide scrollbar for mobile aesthetics but keep functionality */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
