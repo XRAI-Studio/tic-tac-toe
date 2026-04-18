@@ -81,8 +81,9 @@ webpackConfig.devServer = (devServerConfig) => {
   return devServerConfig;
 };
 
-// Wrap with visual edits (automatically adds babel plugin, dev server, and overlay in dev mode)
-if (isDevServer) {
+// Wrap with visual edits (DISABLED: conflicts with @react-three/fiber which treats dash-cased props as nested property paths)
+// eslint-disable-next-line no-constant-condition
+if (false && isDevServer) {
   try {
     const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
     webpackConfig = withVisualEdits(webpackConfig);
