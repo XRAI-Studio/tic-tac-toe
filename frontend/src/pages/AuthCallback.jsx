@@ -35,7 +35,7 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen flex items-center justify-center" data-testid="auth-callback">
       <div className="glass rounded-lg px-8 py-6 text-center">
-        <div className="font-heading uppercase tracking-[0.3em] text-xs text-[#00F0FF]">Authenticating</div>
+        <div className="font-heading uppercase tracking-[0.3em] text-xs text-[#2B4FFF]">Authenticating</div>
         <div className="font-hud text-2xl text-white mt-2">Syncing session…</div>
       </div>
     </div>

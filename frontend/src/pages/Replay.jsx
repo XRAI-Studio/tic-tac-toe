@@ -75,27 +75,27 @@ export default function Replay() {
       </div>
 
       <div className="absolute top-4 left-4 z-30 glass rounded-lg p-4 w-[280px] max-w-[80vw]" data-testid="replay-info">
-        <div className="text-[10px] tracking-[0.3em] uppercase text-[#00F0FF] mb-1">Replay</div>
+        <div className="text-[10px] tracking-[0.3em] uppercase text-[#2B4FFF] mb-1">Replay</div>
         <div className="font-heading uppercase tracking-wider text-white">{replay.player_name}</div>
         <div className="font-mono text-[10px] text-slate-400 mt-1">
           {N}×{N}×{N} · {replay.mode?.replace("_", " ")}
-          {replay.result === "win" && <span className="ml-2 text-[#00FF66]">WIN</span>}
-          {replay.result === "loss" && <span className="ml-2 text-[#FF5500]">LOSS</span>}
+          {replay.result === "win" && <span className="ml-2 text-[#00E676]">WIN</span>}
+          {replay.result === "loss" && <span className="ml-2 text-[#FF1744]">LOSS</span>}
           {replay.result === "draw" && <span className="ml-2 text-slate-300">DRAW</span>}
         </div>
         <div className="mt-3">
-          <div className="h-1 bg-[#0A0D14] rounded overflow-hidden">
-            <div className="h-full bg-[#00F0FF]" style={{ width: `${(step / Math.max(moves.length, 1)) * 100}%`, boxShadow: "0 0 10px #00F0FF" }} />
+          <div className="h-1 bg-[#0A0A12] rounded overflow-hidden">
+            <div className="h-full bg-[#2B4FFF]" style={{ width: `${(step / Math.max(moves.length, 1)) * 100}%`, boxShadow: "0 0 10px #2B4FFF" }} />
           </div>
           <div className="font-mono text-[10px] text-slate-500 mt-1">move {step} / {moves.length}</div>
         </div>
       </div>
 
       <div className="absolute top-4 right-4 z-30 flex flex-col gap-2">
-        <button onClick={() => setResetToken((t) => t + 1)} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] flex items-center gap-2" data-testid="replay-reset-view-btn">
+        <button onClick={() => setResetToken((t) => t + 1)} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#2B4FFF] flex items-center gap-2" data-testid="replay-reset-view-btn">
           <RotateCcw className="w-3.5 h-3.5" /> Reset View
         </button>
-        <Link to="/lobby" className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] flex items-center gap-2" data-testid="replay-lobby-btn">
+        <Link to="/lobby" className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#2B4FFF] flex items-center gap-2" data-testid="replay-lobby-btn">
           <Home className="w-3.5 h-3.5" /> Lobby
         </Link>
       </div>
@@ -103,7 +103,7 @@ export default function Replay() {
       <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-4 py-2 flex items-center gap-3" data-testid="replay-controls">
         <button
           onClick={() => { if (isFinal) setStep(0); setPlaying((p) => !p); }}
-          className="text-[#00F0FF] hover:glow-text transition"
+          className="text-[#2B4FFF] hover:glow-text transition"
           data-testid="replay-playpause-btn"
           aria-label="Play/Pause"
         >
@@ -120,7 +120,7 @@ export default function Replay() {
             <button
               key={s}
               onClick={() => setSpeed(s)}
-              className={`px-2 py-1 rounded text-[10px] uppercase tracking-widest ${speed === s ? "text-[#00F0FF] border border-[#00F0FF]/60" : "text-slate-500 border border-transparent hover:text-slate-200"}`}
+              className={`px-2 py-1 rounded text-[10px] uppercase tracking-widest ${speed === s ? "text-[#2B4FFF] border border-[#2B4FFF]/60" : "text-slate-500 border border-transparent hover:text-slate-200"}`}
               data-testid={`replay-speed-${i}`}
             >
               {i === 0 ? "Fast" : i === 1 ? "Med" : "Slow"}

@@ -5,13 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --cube-bg: #05050A;
-  --cube-surface: #0A0D14;
-  --cube-surface-2: #121822;
-  --cube-cyan: #00F0FF;
-  --cube-cyan-2: #00C3FF;
-  --cube-orange: #FF5500;
-  --cube-green: #00FF66;
+  --cube-bg: #000000;
+  --cube-surface: #0A0A12;
+  --cube-surface-2: #121219;
+  --cube-cyan: #2B4FFF;
+  --cube-cyan-2: #1E40FF;
+  --cube-orange: #FF1744;
+  --cube-green: #00E676;
   --cube-muted: #94A3B8;
   --cube-dim: #475569;
 }
@@ -27,18 +27,18 @@ html, body, #root {
   transition: background-color 300ms ease, color 300ms ease;
 }
 
-::selection { background: rgba(0, 240, 255, 0.3); color: var(--cube-text); }
+::selection { background: rgba(43, 79, 255, 0.3); color: var(--cube-text); }
 
 html.dark, html:not(.light) {
-  --cube-bg: #05050A;
-  --cube-surface: #0A0D14;
-  --cube-surface-2: #121822;
+  --cube-bg: #000000;
+  --cube-surface: #0A0A12;
+  --cube-surface-2: #121219;
   --cube-text: #FFFFFF;
   --cube-muted: #94A3B8;
   --cube-dim: #475569;
   --glass-bg: rgba(5, 5, 10, 0.65);
-  --glass-border: rgba(0, 240, 255, 0.18);
-  --scan-grid: rgba(0, 240, 255, 0.03);
+  --glass-border: rgba(43, 79, 255, 0.18);
+  --scan-grid: rgba(43, 79, 255, 0.03);
 }
 
 html.light {
@@ -49,8 +49,8 @@ html.light {
   --cube-muted: #4B5E75;
   --cube-dim: #94A3B8;
   --glass-bg: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(0, 122, 200, 0.28);
-  --scan-grid: rgba(0, 122, 200, 0.07);
+  --glass-border: rgba(30, 64, 255, 0.28);
+  --scan-grid: rgba(30, 64, 255, 0.07);
 }
 
 @layer base {
@@ -85,22 +85,22 @@ html.light {
 .font-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
 .font-hud { font-family: 'Orbitron', sans-serif; letter-spacing: 0.05em; }
 
-.glow-text { text-shadow: 0 0 12px rgba(0, 240, 255, 0.55); }
-.glow-text-lg { text-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 40px rgba(0, 195, 255, 0.3); }
-.glow-box { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), inset 0 0 12px rgba(0, 240, 255, 0.06); }
-.glow-box-lg { box-shadow: 0 0 30px rgba(0, 240, 255, 0.4), 0 0 80px rgba(0, 195, 255, 0.12); }
+.glow-text { text-shadow: 0 0 12px rgba(43, 79, 255, 0.55); }
+.glow-text-lg { text-shadow: 0 0 20px rgba(43, 79, 255, 0.6), 0 0 40px rgba(30, 64, 255, 0.3); }
+.glow-box { box-shadow: 0 0 15px rgba(43, 79, 255, 0.3), inset 0 0 12px rgba(43, 79, 255, 0.06); }
+.glow-box-lg { box-shadow: 0 0 30px rgba(43, 79, 255, 0.4), 0 0 80px rgba(30, 64, 255, 0.12); }
 
 .glass {
   background: rgba(5, 5, 10, 0.65);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(0, 240, 255, 0.18);
+  border: 1px solid rgba(43, 79, 255, 0.18);
 }
 
 .btn-primary {
   background: transparent;
-  border: 1px solid #00F0FF;
-  color: #00F0FF;
+  border: 1px solid #2B4FFF;
+  color: #2B4FFF;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 700;
@@ -111,14 +111,14 @@ html.light {
   font-size: 0.875rem;
 }
 .btn-primary:hover {
-  background: rgba(0, 240, 255, 0.12);
-  box-shadow: 0 0 26px rgba(0, 240, 255, 0.45);
+  background: rgba(43, 79, 255, 0.12);
+  box-shadow: 0 0 26px rgba(43, 79, 255, 0.45);
 }
 .btn-primary:disabled { opacity: 0.4; pointer-events: none; }
 
 .btn-ghost {
   background: transparent;
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  border: 1px solid rgba(43, 79, 255, 0.15);
   color: #94A3B8;
   padding: 0.55rem 1.1rem;
   border-radius: 0.375rem;
@@ -128,7 +128,7 @@ html.light {
   font-size: 0.75rem;
   letter-spacing: 0.14em;
 }
-.btn-ghost:hover { color: #fff; border-color: rgba(0,240,255,0.45); background: rgba(0, 240, 255, 0.05); }
+.btn-ghost:hover { color: #fff; border-color: rgba(0,240,255,0.45); background: rgba(43, 79, 255, 0.05); }
 
 .scanline {
   background-image:
@@ -138,8 +138,8 @@ html.light {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
-  50% { box-shadow: 0 0 22px rgba(0, 240, 255, 0.55); }
+  0%, 100% { box-shadow: 0 0 10px rgba(43, 79, 255, 0.2); }
+  50% { box-shadow: 0 0 22px rgba(43, 79, 255, 0.55); }
 }
 .pulse-glow { animation: pulseGlow 2.2s ease-in-out infinite; }
 
@@ -158,11 +158,11 @@ html.light .text-slate-400 { color: var(--cube-muted); }
 html.light .text-slate-500,
 html.light .text-slate-600 { color: var(--cube-dim); }
 html.light .bg-black\/40 { background-color: rgba(255,255,255,0.4); }
-html.light .glow-text { text-shadow: 0 0 10px rgba(0, 180, 255, 0.4); }
-html.light .glow-text-lg { text-shadow: 0 0 14px rgba(0, 180, 255, 0.45), 0 0 28px rgba(0, 140, 210, 0.2); }
+html.light .glow-text { text-shadow: 0 0 10px rgba(43, 79, 255, 0.4); }
+html.light .glow-text-lg { text-shadow: 0 0 14px rgba(43, 79, 255, 0.45), 0 0 28px rgba(30, 64, 255, 0.2); }
 
 /* Navbar links need stronger contrast in light mode */
-html.light nav a:not(.text-\[\#00F0FF\]) { color: #1E293B; }
+html.light nav a:not(.text-\[\#2B4FFF\]) { color: #1E293B; }
 html.light nav a:hover { color: #0077C8; }
 
 /* Hide scrollbar for mobile aesthetics but keep functionality */

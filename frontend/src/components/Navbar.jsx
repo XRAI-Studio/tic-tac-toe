@@ -23,15 +23,15 @@ export default function Navbar() {
 
   const linkCls = ({ isActive }) =>
     `px-3 py-2 rounded text-xs uppercase tracking-[0.2em] font-heading font-semibold transition-colors ${
-      isActive ? "text-[#00F0FF] glow-text" : "text-slate-300 hover:text-white"
+      isActive ? "text-[#2B4FFF] glow-text" : "text-slate-300 hover:text-white"
     }`;
 
   return (
     <nav className="sticky top-0 z-40 glass" data-testid="main-navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group" data-testid="nav-logo">
-          <Cuboid className="w-6 h-6 text-[#00F0FF] group-hover:rotate-45 transition-transform duration-500" />
-          <span className="font-heading font-black tracking-[0.25em] text-white text-sm">CUBE<span className="text-[#00F0FF]">3</span></span>
+          <Cuboid className="w-6 h-6 text-[#2B4FFF] group-hover:rotate-45 transition-transform duration-500" />
+          <span className="font-heading font-black tracking-[0.25em] text-white text-sm">CUBE<span className="text-[#2B4FFF]">3</span></span>
         </Link>
 
         <div className="hidden sm:flex items-center gap-1">
@@ -41,21 +41,21 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={toggleMute} className="w-9 h-9 rounded border border-[#00F0FF]/20 text-slate-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/60 transition flex items-center justify-center" data-testid="nav-sound-toggle" aria-label="Toggle sound">
+          <button onClick={toggleMute} className="w-9 h-9 rounded border border-[#2B4FFF]/20 text-slate-300 hover:text-[#2B4FFF] hover:border-[#2B4FFF]/60 transition flex items-center justify-center" data-testid="nav-sound-toggle" aria-label="Toggle sound">
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
-          <button onClick={toggle} className="w-9 h-9 rounded border border-[#00F0FF]/20 text-slate-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/60 transition flex items-center justify-center" data-testid="nav-theme-toggle" aria-label="Toggle theme">
+          <button onClick={toggle} className="w-9 h-9 rounded border border-[#2B4FFF]/20 text-slate-300 hover:text-[#2B4FFF] hover:border-[#2B4FFF]/60 transition flex items-center justify-center" data-testid="nav-theme-toggle" aria-label="Toggle theme">
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {user ? (
             <>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded border border-[#00F0FF]/20">
+              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded border border-[#2B4FFF]/20">
                 {user.picture ? (
                   <img src={user.picture} alt="" className="w-6 h-6 rounded-full" />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#00F0FF]/20 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  <div className="w-6 h-6 rounded-full bg-[#2B4FFF]/20 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-[#2B4FFF]" />
                   </div>
                 )}
                 <span className="font-mono text-xs text-white" data-testid="nav-user-name">{user.name}</span>

@@ -43,9 +43,9 @@ export default function Leaderboard() {
     <div className="min-h-[calc(100vh-3.5rem)] scanline">
       <div className="max-w-6xl mx-auto px-6 py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="text-[#00F0FF] text-xs uppercase tracking-[0.4em] font-heading mb-2">Global Rankings</div>
+          <div className="text-[#2B4FFF] text-xs uppercase tracking-[0.4em] font-heading mb-2">Global Rankings</div>
           <h1 className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl lg:text-6xl text-white glow-text-lg">
-            Leader<span className="text-[#00F0FF]">board</span>
+            Leader<span className="text-[#2B4FFF]">board</span>
           </h1>
         </motion.div>
 
@@ -56,7 +56,7 @@ export default function Leaderboard() {
         </div>
 
         <div className="mt-8 glass rounded-lg overflow-hidden" data-testid="leaderboard-table">
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#00F0FF]/15 text-[10px] uppercase tracking-[0.2em] text-[#00F0FF]">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#2B4FFF]/15 text-[10px] uppercase tracking-[0.2em] text-[#2B4FFF]">
             <div className="col-span-1">#</div>
             <div className="col-span-5">Player</div>
             <div className="col-span-2 text-right">Wins</div>
@@ -76,7 +76,7 @@ export default function Leaderboard() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#00F0FF]/10 hover:bg-[#00F0FF]/5 transition items-center"
+              className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-[#2B4FFF]/10 hover:bg-[#2B4FFF]/5 transition items-center"
               data-testid={`lb-row-${i}`}
             >
               <div className="col-span-1 flex items-center">
@@ -87,9 +87,9 @@ export default function Leaderboard() {
               </div>
               <div className="col-span-5 flex items-center gap-3">
                 {r.picture ? (
-                  <img src={r.picture} alt="" className="w-9 h-9 rounded-full object-cover border border-[#00F0FF]/30" />
+                  <img src={r.picture} alt="" className="w-9 h-9 rounded-full object-cover border border-[#2B4FFF]/30" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 flex items-center justify-center font-hud text-[#00F0FF]">
+                  <div className="w-9 h-9 rounded-full bg-[#2B4FFF]/10 border border-[#2B4FFF]/30 flex items-center justify-center font-hud text-[#2B4FFF]">
                     {r.name?.slice(0, 1).toUpperCase()}
                   </div>
                 )}
@@ -99,7 +99,7 @@ export default function Leaderboard() {
                 </div>
               </div>
               <div className="col-span-2 text-right font-hud text-white">{r.wins}</div>
-              <div className="col-span-2 text-right font-hud text-[#00F0FF]">{r.win_rate}%</div>
+              <div className="col-span-2 text-right font-hud text-[#2B4FFF]">{r.win_rate}%</div>
               <div className="col-span-2 text-right font-hud text-white">{r.score}</div>
             </motion.div>
           ))}
@@ -121,7 +121,7 @@ function Filter({ label, options, value, onChange, testid }) {
               key={o.v}
               onClick={() => onChange(o.v)}
               className={`px-3 py-1 rounded text-[11px] uppercase tracking-wider font-heading transition-all ${
-                active ? "bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/60" : "text-slate-300 border border-[#00F0FF]/15 hover:border-[#00F0FF]/40"
+                active ? "bg-[#2B4FFF]/15 text-[#2B4FFF] border border-[#2B4FFF]/60" : "text-slate-300 border border-[#2B4FFF]/15 hover:border-[#2B4FFF]/40"
               }`}
               data-testid={`${testid}-${o.v}`}
             >

@@ -31,6 +31,21 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - Auth via Emergent Google OAuth (session_token in localStorage)
 - Seed script (/app/backend/seed.py) — 6 demo users, ~60 seeded games
 
+**Phase 2 (2026-02-18)**
+- Undo last move (local games only, disabled in AI matches)
+- Auto-save + resume via /api/games/saved (lobby shows resume banner)
+- Shareable replays at /replay/:id (POST /api/replays) + result-overlay share button
+- Sound effects via WebAudio (click / win / draw) with mute toggle
+- Light/dark theme toggle (CSS vars, persisted in localStorage)
+
+**Phase 3 (2026-02-18)**
+- Rebrand: background → pure black (#000000); accent → royal blue (#2B4FFF);
+  player pieces → Blue ╳ (#2B4FFF), Red ⚫ (#FF1744), Green ▲ (#00E676)
+- Fixed stale-closure bug in Play.play() causing rapid clicks to register as same player
+- Hostinger VPS deployment guide (`DEPLOYMENT_HOSTINGER.md`)
+- `.env.example` files for backend and frontend
+- Production README
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account

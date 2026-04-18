@@ -28,7 +28,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
-              className="text-[#00F0FF] text-xs tracking-[0.4em] uppercase font-heading mb-4"
+              className="text-[#2B4FFF] text-xs tracking-[0.4em] uppercase font-heading mb-4"
               data-testid="landing-kicker"
             >
               — 3D Strategy / Arcade
@@ -42,7 +42,7 @@ export default function Landing() {
               data-testid="landing-title"
             >
               Tic-Tac-Toe,<br />
-              <span className="text-[#00F0FF]">rebuilt in 3D.</span>
+              <span className="text-[#2B4FFF]">rebuilt in 3D.</span>
             </motion.h1>
 
             <motion.p
@@ -82,7 +82,7 @@ export default function Landing() {
                 { k: "3", v: "AI difficulties" },
               ].map((s) => (
                 <div key={s.v} className="glass rounded p-4">
-                  <div className="font-hud text-3xl text-[#00F0FF] glow-text" data-testid={`stat-${s.v.replace(/\s/g,'-').toLowerCase()}`}>{s.k}</div>
+                  <div className="font-hud text-3xl text-[#2B4FFF] glow-text" data-testid={`stat-${s.v.replace(/\s/g,'-').toLowerCase()}`}>{s.k}</div>
                   <div className="text-[10px] tracking-[0.25em] uppercase text-slate-400 mt-2">{s.v}</div>
                 </div>
               ))}
@@ -98,8 +98,8 @@ export default function Landing() {
             >
               <div className="glass rounded-xl p-6 glow-box">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="font-heading uppercase text-xs tracking-[0.3em] text-[#00F0FF]">Quickstart</div>
-                  <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+                  <div className="font-heading uppercase text-xs tracking-[0.3em] text-[#2B4FFF]">Quickstart</div>
+                  <Sparkles className="w-4 h-4 text-[#2B4FFF]" />
                 </div>
                 <div className="space-y-3">
                   <QuickLink to="/lobby?mode=ai_hard&size=3" icon={<Bot />} title="Face the AI" desc="Hard · 3×3×3" testid="qs-ai" />
@@ -118,15 +118,15 @@ export default function Landing() {
 
 function QuickLink({ to, icon, title, desc, testid }) {
   return (
-    <Link to={to} className="flex items-center gap-3 px-4 py-3 rounded border border-[#00F0FF]/15 hover:border-[#00F0FF]/60 hover:bg-[#00F0FF]/5 transition-all group" data-testid={testid}>
-      <div className="w-9 h-9 rounded border border-[#00F0FF]/30 text-[#00F0FF] flex items-center justify-center group-hover:bg-[#00F0FF]/10 transition">
+    <Link to={to} className="flex items-center gap-3 px-4 py-3 rounded border border-[#2B4FFF]/15 hover:border-[#2B4FFF]/60 hover:bg-[#2B4FFF]/5 transition-all group" data-testid={testid}>
+      <div className="w-9 h-9 rounded border border-[#2B4FFF]/30 text-[#2B4FFF] flex items-center justify-center group-hover:bg-[#2B4FFF]/10 transition">
         {icon}
       </div>
       <div className="flex-1">
         <div className="text-sm text-white font-heading font-semibold uppercase tracking-wider">{title}</div>
         <div className="text-xs text-slate-400 font-mono">{desc}</div>
       </div>
-      <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-[#00F0FF] transition" />
+      <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-[#2B4FFF] transition" />
     </Link>
   );
 }

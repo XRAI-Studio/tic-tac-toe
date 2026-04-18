@@ -50,7 +50,7 @@ function Mark({ playerId, scale }) {
 function Cell({ position, size, flatIndex, value, currentPlayer, onClick, hovered, setHovered, disabled, markScale, isWinning }) {
   const ref = useRef();
   const hoveredHere = hovered === flatIndex;
-  const color = value !== null ? PLAYER_COLORS[value] : "#00F0FF";
+  const color = value !== null ? PLAYER_COLORS[value] : "#2B4FFF";
 
   useFrame((_, dt) => {
     if (!ref.current) return;
@@ -70,10 +70,10 @@ function Cell({ position, size, flatIndex, value, currentPlayer, onClick, hovere
       >
         <boxGeometry args={[size, size, size]} />
         <meshPhysicalMaterial
-          color={isWinning ? color : "#00F0FF"}
+          color={isWinning ? color : "#2B4FFF"}
           transparent
           opacity={value !== null ? 0.08 : hoveredHere ? 0.2 : 0.08}
-          emissive={isWinning ? color : "#00F0FF"}
+          emissive={isWinning ? color : "#2B4FFF"}
           emissiveIntensity={isWinning ? 1.1 : hoveredHere ? 0.45 : 0.12}
           roughness={0.25}
           metalness={0.15}
@@ -85,7 +85,7 @@ function Cell({ position, size, flatIndex, value, currentPlayer, onClick, hovere
       {/* Frame: inner glowing cube */}
       <mesh>
         <boxGeometry args={[size * 0.995, size * 0.995, size * 0.995]} />
-        <meshBasicMaterial color={isWinning ? color : "#00F0FF"} wireframe transparent opacity={isWinning ? 0.9 : 0.22} toneMapped={false} />
+        <meshBasicMaterial color={isWinning ? color : "#2B4FFF"} wireframe transparent opacity={isWinning ? 0.9 : 0.22} toneMapped={false} />
       </mesh>
 
       {value !== null && <Mark playerId={value} scale={markScale} />}
@@ -110,7 +110,7 @@ function WinLine({ points }) {
   return (
     <mesh>
       <tubeGeometry args={[curve, 64, 0.09, 16, false]} />
-      <meshStandardMaterial color="#00F0FF" emissive="#00F0FF" emissiveIntensity={2.4} toneMapped={false} />
+      <meshStandardMaterial color="#2B4FFF" emissive="#2B4FFF" emissiveIntensity={2.4} toneMapped={false} />
     </mesh>
   );
 }
@@ -189,8 +189,8 @@ export default function Board3D({
     >
       <PerspectiveCamera makeDefault position={[6, 5, 7]} fov={42} />
       <ambientLight intensity={0.35} />
-      <pointLight position={[10, 10, 10]} intensity={1.2} color="#00F0FF" />
-      <pointLight position={[-10, -6, -10]} intensity={0.8} color="#0077FF" />
+      <pointLight position={[10, 10, 10]} intensity={1.2} color="#2B4FFF" />
+      <pointLight position={[-10, -6, -10]} intensity={0.8} color="#1E40FF" />
       <CameraReset token={resetToken} />
       <CubeBoard
         N={N}

@@ -2,7 +2,7 @@
 // Cell index = l*N*N + r*N + c  (level, row, col) in [0, N)
 
 export const PLAYER_MARKS = ["X", "O", "TRI"];
-export const PLAYER_COLORS = ["#00F0FF", "#FF5500", "#00FF66"];
+export const PLAYER_COLORS = ["#2B4FFF", "#FF1744", "#00E676"];
 
 export function idx(N, l, r, c) {
   return l * N * N + r * N + c;

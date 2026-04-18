@@ -9,7 +9,7 @@ import api from "../api";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2, Check, Copy } from "lucide-react";
 
-const PLAYER_NAMES = ["Cyan", "Orange", "Green"];
+const PLAYER_NAMES = ["Blue", "Red", "Green"];
 const MARK_SYMBOL = ["╳", "⚫", "▲"];
 
 function parseMode(mode) {
@@ -61,14 +61,15 @@ export default function Play() {
 
   const play = useCallback((flat) => {
     if (result || board[flat] !== null) return;
+    const currentTurn = history.length % numPlayers;
     setBoard((prev) => {
       const next = prev.slice();
-      next[flat] = turn;
+      next[flat] = currentTurn;
       return next;
     });
-    setHistory((h) => [...h, { player: turn, flat }]);
+    setHistory((h) => [...h, { player: currentTurn, flat }]);
     playClick();
-  }, [board, turn, result, playClick]);
+  }, [board, history.length, numPlayers, result, playClick]);
 
   const undo = useCallback(() => {
     if (isAI || result || history.length === 0) return;
@@ -201,7 +202,7 @@ export default function Play() {
 
       <div className="absolute top-4 left-4 z-30 glass rounded-lg p-4 w-[260px] max-w-[80vw]" data-testid="player-panel">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] tracking-[0.3em] uppercase text-[#00F0FF]">Match</div>
+          <div className="text-[10px] tracking-[0.3em] uppercase text-[#2B4FFF]">Match</div>
           <div className="font-mono text-[10px] text-slate-400">{N}×{N}×{N} · {mode.replace("_", " ")}</div>
         </div>
         <div className="space-y-2">
@@ -212,7 +213,7 @@ export default function Play() {
               <div
                 key={p}
                 data-testid={`player-row-${p}`}
-                className={`flex items-center gap-3 px-3 py-2 rounded border transition-all ${active ? "border-[#00F0FF] bg-[#00F0FF]/10" : "border-[#00F0FF]/10"}`}
+                className={`flex items-center gap-3 px-3 py-2 rounded border transition-all ${active ? "border-[#2B4FFF] bg-[#2B4FFF]/10" : "border-[#2B4FFF]/10"}`}
               >
                 <div className="w-7 h-7 rounded flex items-center justify-center font-hud text-lg" style={{ color: PLAYER_COLORS[p], textShadow: `0 0 10px ${PLAYER_COLORS[p]}` }}>
                   {MARK_SYMBOL[p]}
@@ -221,7 +222,7 @@ export default function Play() {
                   <div className="font-heading uppercase text-xs tracking-wider text-white">{name}</div>
                   <div className="font-mono text-[10px] text-slate-400">{active ? (aiThinking && p === aiId ? "thinking…" : "your move") : "waiting"}</div>
                 </div>
-                {active && <div className="w-2 h-2 rounded-full bg-[#00F0FF] pulse-glow" />}
+                {active && <div className="w-2 h-2 rounded-full bg-[#2B4FFF] pulse-glow" />}
               </div>
             );
           })}
@@ -229,31 +230,31 @@ export default function Play() {
       </div>
 
       <div className="absolute top-4 right-4 z-30 flex flex-col gap-2" data-testid="controls-panel">
-        <button onClick={resetView} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] transition flex items-center gap-2" data-testid="reset-view-btn">
+        <button onClick={resetView} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#2B4FFF] transition flex items-center gap-2" data-testid="reset-view-btn">
           <RotateCcw className="w-3.5 h-3.5" /> Reset View
         </button>
-        <button onClick={() => setExploded((x) => !x)} className={`glass rounded px-3 py-2 text-xs hover:text-[#00F0FF] transition flex items-center gap-2 ${exploded ? "text-[#00F0FF]" : "text-slate-200"}`} data-testid="explode-toggle-btn">
+        <button onClick={() => setExploded((x) => !x)} className={`glass rounded px-3 py-2 text-xs hover:text-[#2B4FFF] transition flex items-center gap-2 ${exploded ? "text-[#2B4FFF]" : "text-slate-200"}`} data-testid="explode-toggle-btn">
           <Layers className="w-3.5 h-3.5" /> {exploded ? "Collapse" : "Exploded"}
         </button>
         <button
           onClick={undo}
           disabled={!canUndo}
-          className={`glass rounded px-3 py-2 text-xs transition flex items-center gap-2 ${canUndo ? "text-slate-200 hover:text-[#00F0FF]" : "text-slate-600 opacity-50 cursor-not-allowed"}`}
+          className={`glass rounded px-3 py-2 text-xs transition flex items-center gap-2 ${canUndo ? "text-slate-200 hover:text-[#2B4FFF]" : "text-slate-600 opacity-50 cursor-not-allowed"}`}
           data-testid="undo-btn"
         >
           <Undo2 className="w-3.5 h-3.5" /> Undo
         </button>
-        <button onClick={resetGame} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] transition flex items-center gap-2" data-testid="new-game-btn">
+        <button onClick={resetGame} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#2B4FFF] transition flex items-center gap-2" data-testid="new-game-btn">
           <RefreshCw className="w-3.5 h-3.5" /> New Game
         </button>
-        <Link to="/lobby" className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] transition flex items-center gap-2" data-testid="back-lobby-btn">
+        <Link to="/lobby" className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#2B4FFF] transition flex items-center gap-2" data-testid="back-lobby-btn">
           <Home className="w-3.5 h-3.5" /> Lobby
         </Link>
       </div>
 
       <div className="absolute bottom-4 right-4 z-30 glass rounded-lg p-3 w-[260px] max-w-[80vw] max-h-[260px] flex flex-col" data-testid="history-panel">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[10px] tracking-[0.3em] uppercase text-[#00F0FF]">Move Log</div>
+          <div className="text-[10px] tracking-[0.3em] uppercase text-[#2B4FFF]">Move Log</div>
           <div className="font-mono text-[10px] text-slate-500">{history.length}</div>
         </div>
         <div className="flex-1 overflow-y-auto hide-scrollbar space-y-1">
@@ -321,9 +322,9 @@ export default function Play() {
                 {user && <Link to="/profile" className="btn-ghost inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" />Stats</Link>}
               </div>
               {shareUrl && (
-                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded border border-[#00F0FF]/30 bg-[#00F0FF]/5" data-testid="share-url">
-                  <input value={shareUrl} readOnly onClick={(e) => e.target.select()} className="flex-1 bg-transparent font-mono text-[11px] text-[#00F0FF] outline-none" />
-                  <button onClick={() => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(()=>setCopied(false), 2000); }} className="text-slate-300 hover:text-[#00F0FF] transition" data-testid="copy-url-btn" aria-label="Copy">
+                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded border border-[#2B4FFF]/30 bg-[#2B4FFF]/5" data-testid="share-url">
+                  <input value={shareUrl} readOnly onClick={(e) => e.target.select()} className="flex-1 bg-transparent font-mono text-[11px] text-[#2B4FFF] outline-none" />
+                  <button onClick={() => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(()=>setCopied(false), 2000); }} className="text-slate-300 hover:text-[#2B4FFF] transition" data-testid="copy-url-btn" aria-label="Copy">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>
