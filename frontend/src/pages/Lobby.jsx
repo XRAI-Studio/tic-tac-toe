@@ -1,16 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Bot, Users, Cuboid, Zap, Flame, Sparkles } from "lucide-react";
+import { Bot, Users, Cuboid, Zap, Flame, Sparkles, Play as PlayIcon, X as XIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import api from "../api";
 
 export default function Lobby() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [size, setSize] = useState(parseInt(params.get("size") || "3", 10));
   const [mode, setMode] = useState(params.get("mode") || "ai_medium");
+  const { user } = useAuth();
+  const [saved, setSaved] = useState(null);
 
-  const start = () => {
-    navigate(`/play?size=${size}&mode=${mode}`);
+  useEffect(() => {
+    if (!user) { setSaved(null); return; }
+    api.get("/games/saved").then(({ data }) => setSaved(data)).catch(() => setSaved(null));
+  }, [user]);
+
+  const start = () => navigate(`/play?size=${size}&mode=${mode}`);
+  const resume = () => {
+    if (!saved) return;
+    navigate(`/play?size=${saved.board_size}&mode=${saved.mode}&resume=1`);
+  };
+  const discardSaved = async () => {
+    await api.delete("/games/saved").catch(() => {});
+    setSaved(null);
   };
 
   const sizes = [
@@ -37,6 +52,29 @@ export default function Lobby() {
           <p className="text-slate-400 mt-3 max-w-2xl">Pick a board size and opponent. Matches are saved to your profile when signed in.</p>
         </motion.div>
 
+        {saved && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 glass rounded-lg p-5 border-[#00F0FF]/50 flex items-center gap-4 glow-box"
+            data-testid="resume-banner"
+          >
+            <div className="w-11 h-11 rounded border border-[#00F0FF] text-[#00F0FF] flex items-center justify-center">
+              <PlayIcon className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="font-heading uppercase tracking-wider text-white text-sm">Unfinished match</div>
+              <div className="font-mono text-xs text-slate-400 mt-0.5">
+                {saved.board_size}×{saved.board_size}×{saved.board_size} · {saved.mode?.replace("_", " ")} · {(saved.moves || []).length} moves in
+              </div>
+            </div>
+            <button onClick={resume} className="btn-primary" data-testid="resume-btn">Resume</button>
+            <button onClick={discardSaved} className="text-slate-500 hover:text-white transition" data-testid="discard-saved-btn" aria-label="Discard">
+              <XIcon className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
         <div className="mt-10 grid md:grid-cols-12 gap-6">
           <section className="md:col-span-6">
             <div className="font-heading uppercase tracking-[0.3em] text-xs text-[#00F0FF] mb-3">Board</div>
@@ -48,11 +86,7 @@ export default function Lobby() {
                     key={s.v}
                     onClick={() => setSize(s.v)}
                     data-testid={`size-${s.v}-btn`}
-                    className={`text-left p-5 rounded-lg border transition-all ${
-                      active
-                        ? "border-[#00F0FF] bg-[#00F0FF]/5 glow-box"
-                        : "border-[#00F0FF]/15 hover:border-[#00F0FF]/50"
-                    }`}
+                    className={`text-left p-5 rounded-lg border transition-all ${active ? "border-[#00F0FF] bg-[#00F0FF]/5 glow-box" : "border-[#00F0FF]/15 hover:border-[#00F0FF]/50"}`}
                   >
                     <div className={`w-11 h-11 rounded border flex items-center justify-center mb-3 ${active ? "border-[#00F0FF] text-[#00F0FF]" : "border-[#00F0FF]/30 text-slate-300"}`}>
                       {s.icon}
@@ -75,9 +109,7 @@ export default function Lobby() {
                     key={m.v}
                     onClick={() => setMode(m.v)}
                     data-testid={`mode-${m.v}-btn`}
-                    className={`w-full text-left flex items-center gap-4 p-4 rounded border transition-all ${
-                      active ? "border-[#00F0FF] bg-[#00F0FF]/5" : "border-[#00F0FF]/15 hover:border-[#00F0FF]/40"
-                    }`}
+                    className={`w-full text-left flex items-center gap-4 p-4 rounded border transition-all ${active ? "border-[#00F0FF] bg-[#00F0FF]/5" : "border-[#00F0FF]/15 hover:border-[#00F0FF]/40"}`}
                   >
                     <div className={`w-10 h-10 rounded border flex items-center justify-center ${active ? "border-[#00F0FF] text-[#00F0FF]" : "border-[#00F0FF]/30 text-slate-300"}`}>
                       {m.icon}

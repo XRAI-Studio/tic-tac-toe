@@ -1,9 +1,13 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Cuboid, Trophy, User, LogOut, LogIn } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
+import { useSound } from "../contexts/SoundContext";
+import { Cuboid, User, LogOut, LogIn, Sun, Moon, Volume2, VolumeX } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useTheme();
+  const { muted, toggleMute } = useSound();
   const navigate = useNavigate();
 
   const handleLogin = () => {
@@ -37,6 +41,13 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button onClick={toggleMute} className="w-9 h-9 rounded border border-[#00F0FF]/20 text-slate-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/60 transition flex items-center justify-center" data-testid="nav-sound-toggle" aria-label="Toggle sound">
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+          <button onClick={toggle} className="w-9 h-9 rounded border border-[#00F0FF]/20 text-slate-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/60 transition flex items-center justify-center" data-testid="nav-theme-toggle" aria-label="Toggle theme">
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {user ? (
             <>
               <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded border border-[#00F0FF]/20">

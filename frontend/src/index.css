@@ -18,15 +18,40 @@
 
 html, body, #root {
   background-color: var(--cube-bg);
-  color: #fff;
+  color: var(--cube-text);
   margin: 0;
   min-height: 100%;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
-::selection { background: rgba(0, 240, 255, 0.3); color: #fff; }
+::selection { background: rgba(0, 240, 255, 0.3); color: var(--cube-text); }
+
+html.dark, html:not(.light) {
+  --cube-bg: #05050A;
+  --cube-surface: #0A0D14;
+  --cube-surface-2: #121822;
+  --cube-text: #FFFFFF;
+  --cube-muted: #94A3B8;
+  --cube-dim: #475569;
+  --glass-bg: rgba(5, 5, 10, 0.65);
+  --glass-border: rgba(0, 240, 255, 0.18);
+  --scan-grid: rgba(0, 240, 255, 0.03);
+}
+
+html.light {
+  --cube-bg: #F4F7FB;
+  --cube-surface: #FFFFFF;
+  --cube-surface-2: #ECF1F7;
+  --cube-text: #0A1420;
+  --cube-muted: #4B5E75;
+  --cube-dim: #94A3B8;
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(0, 122, 200, 0.28);
+  --scan-grid: rgba(0, 122, 200, 0.07);
+}
 
 @layer base {
   :root {
@@ -107,8 +132,8 @@ html, body, #root {
 
 .scanline {
   background-image:
-    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--scan-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--scan-grid) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
@@ -123,6 +148,18 @@ html, body, #root {
   50% { transform: translateY(-6px); }
 }
 .float-y { animation: floatY 4s ease-in-out infinite; }
+
+/* Light mode color overrides — ensures text legibility on light backgrounds without rewriting every component */
+html.light .text-white { color: var(--cube-text); }
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-300,
+html.light .text-slate-400 { color: var(--cube-muted); }
+html.light .text-slate-500,
+html.light .text-slate-600 { color: var(--cube-dim); }
+html.light .bg-black\/40 { background-color: rgba(255,255,255,0.4); }
+html.light .glow-text { text-shadow: 0 0 10px rgba(0, 180, 255, 0.4); }
+html.light .glow-text-lg { text-shadow: 0 0 14px rgba(0, 180, 255, 0.45), 0 0 28px rgba(0, 140, 210, 0.2); }
 
 /* Hide scrollbar for mobile aesthetics but keep functionality */
 .hide-scrollbar::-webkit-scrollbar { display: none; }

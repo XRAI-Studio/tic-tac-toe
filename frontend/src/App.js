@@ -1,12 +1,15 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { SoundProvider } from "./contexts/SoundContext";
 import Navbar from "./components/Navbar";
 import Landing from "./pages/Landing";
 import Lobby from "./pages/Lobby";
 import Play from "./pages/Play";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
+import Replay from "./pages/Replay";
 import AuthCallback from "./pages/AuthCallback";
 
 function AppShell() {
@@ -24,6 +27,7 @@ function AppShell() {
         <Route path="/play" element={<Play />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/replay/:id" element={<Replay />} />
       </Routes>
     </>
   );
@@ -32,11 +36,15 @@ function AppShell() {
 export default function App() {
   return (
     <div className="App min-h-screen">
-      <BrowserRouter>
-        <AuthProvider>
-          <AppShell />
-        </AuthProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <SoundProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <AppShell />
+            </AuthProvider>
+          </BrowserRouter>
+        </SoundProvider>
+      </ThemeProvider>
     </div>
   );
 }

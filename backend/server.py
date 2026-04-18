@@ -223,6 +223,77 @@ async def game_history(user_id: str, limit: int = 20):
     return games
 
 
+# ---------- Saved games (auto-resume) ----------
+class SavedGameCreate(BaseModel):
+    board_size: int
+    mode: str
+    moves: list  # [{player: int, flat: int}]
+
+
+@api_router.post("/games/saved")
+async def save_game(payload: SavedGameCreate, request: Request):
+    user = await require_user(request)
+    doc = {
+        "user_id": user["user_id"],
+        "board_size": payload.board_size,
+        "mode": payload.mode,
+        "moves": payload.moves,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.saved_games.update_one({"user_id": user["user_id"]}, {"$set": doc}, upsert=True)
+    return {"ok": True}
+
+
+@api_router.get("/games/saved")
+async def get_saved(request: Request):
+    user = await require_user(request)
+    saved = await db.saved_games.find_one({"user_id": user["user_id"]}, {"_id": 0})
+    return saved
+
+
+@api_router.delete("/games/saved")
+async def clear_saved(request: Request):
+    user = await require_user(request)
+    await db.saved_games.delete_one({"user_id": user["user_id"]})
+    return {"ok": True}
+
+
+# ---------- Shareable replays ----------
+class ReplayCreate(BaseModel):
+    board_size: int
+    mode: str
+    moves: list
+    winner: Optional[int] = None
+    result: Optional[str] = None
+    player_name: Optional[str] = None
+
+
+@api_router.post("/replays")
+async def create_replay(payload: ReplayCreate, request: Request):
+    user = await get_current_user(request)
+    replay_id = uuid.uuid4().hex[:10]
+    doc = {
+        "replay_id": replay_id,
+        "board_size": payload.board_size,
+        "mode": payload.mode,
+        "moves": payload.moves,
+        "winner": payload.winner,
+        "result": payload.result,
+        "player_name": user["name"] if user else (payload.player_name or "Guest"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.replays.insert_one(doc)
+    return {"replay_id": replay_id}
+
+
+@api_router.get("/replays/{replay_id}")
+async def get_replay(replay_id: str):
+    r = await db.replays.find_one({"replay_id": replay_id}, {"_id": 0})
+    if not r:
+        raise HTTPException(status_code=404, detail="Replay not found")
+    return r
+
+
 # ---------- Stats & Leaderboard ----------
 async def _compute_user_stats(user_id: str) -> dict:
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0})

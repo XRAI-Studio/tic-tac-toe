@@ -1,3 +1,5 @@
 .App {
-  background-color: #05050A;
+  background-color: var(--cube-bg);
+  min-height: 100vh;
+  transition: background-color 300ms ease;
 }

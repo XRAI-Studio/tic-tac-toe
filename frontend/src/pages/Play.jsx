@@ -4,9 +4,10 @@ import Board3D from "../components/Board3D";
 import { emptyBoard, generateLines, checkWinner, isDraw, cellNotation, PLAYER_COLORS } from "../game/logic";
 import { pickAIMove } from "../game/ai";
 import { useAuth } from "../contexts/AuthContext";
+import { useSound } from "../contexts/SoundContext";
 import api from "../api";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, ArrowRight } from "lucide-react";
+import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2, Check, Copy } from "lucide-react";
 
 const PLAYER_NAMES = ["Cyan", "Orange", "Green"];
 const MARK_SYMBOL = ["╳", "⚫", "▲"];
@@ -21,26 +22,42 @@ export default function Play() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { playClick, playWin, playDraw } = useSound();
 
   const size = parseInt(params.get("size") || "3", 10);
   const mode = params.get("mode") || "local_2p";
+  const resume = params.get("resume") === "1";
   const { isAI, difficulty, numPlayers } = parseMode(mode);
   const N = size === 4 ? 4 : 3;
 
   const lines = useMemo(() => generateLines(N), [N]);
   const [board, setBoard] = useState(() => emptyBoard(N));
-  const [turn, setTurn] = useState(0); // player index
-  const [history, setHistory] = useState([]); // [{ player, flat }]
-  const [result, setResult] = useState(null); // { winner, line } | 'draw' | null
+  const [turn, setTurn] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [result, setResult] = useState(null);
   const [exploded, setExploded] = useState(false);
   const [resetToken, setResetToken] = useState(0);
   const [aiThinking, setAiThinking] = useState(false);
+  const [shareUrl, setShareUrl] = useState(null);
+  const [copied, setCopied] = useState(false);
   const startedAt = useRef(Date.now());
   const recordedRef = useRef(false);
 
-  // In AI mode, human is player 0, AI is player 1.
   const humanId = 0;
   const aiId = 1;
+
+  // Resume saved game on mount if requested
+  useEffect(() => {
+    if (!resume || !user) return;
+    api.get("/games/saved").then(({ data }) => {
+      if (!data || data.board_size !== N || data.mode !== mode) return;
+      const b = emptyBoard(N);
+      (data.moves || []).forEach((m) => { b[m.flat] = m.player; });
+      setBoard(b);
+      setHistory(data.moves || []);
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const play = useCallback((flat) => {
     if (result || board[flat] !== null) return;
@@ -50,28 +67,39 @@ export default function Play() {
       return next;
     });
     setHistory((h) => [...h, { player: turn, flat }]);
-  }, [board, turn, result]);
+    playClick();
+  }, [board, turn, result, playClick]);
 
-  // After any board change, check winner/draw then rotate turn
+  const undo = useCallback(() => {
+    if (isAI || result || history.length === 0) return;
+    setHistory((h) => h.slice(0, -1));
+    setBoard((prev) => {
+      const next = prev.slice();
+      const last = history[history.length - 1];
+      if (last) next[last.flat] = null;
+      return next;
+    });
+    playClick();
+  }, [isAI, result, history, playClick]);
+
+  // Detect end of game
   useEffect(() => {
     const res = checkWinner(board, lines);
     if (res.winner !== null) {
       setResult({ winner: res.winner, line: res.line });
+      playWin();
       return;
     }
     if (isDraw(board, lines, numPlayers)) {
       setResult({ winner: null, line: null, draw: true });
-      return;
+      playDraw();
     }
-    // Advance turn only when a move was made - track via history length parity
-    // We always recompute next turn from history to keep consistent.
-  }, [board, lines, numPlayers]);
+  }, [board, lines, numPlayers, playWin, playDraw]);
 
-  // Derive whose turn from history length
+  // Rotate turn from history length
   useEffect(() => {
     if (result) return;
-    const next = history.length % numPlayers;
-    setTurn(next);
+    setTurn(history.length % numPlayers);
   }, [history.length, numPlayers, result]);
 
   // AI plays when it's the AI's turn
@@ -88,13 +116,23 @@ export default function Play() {
           return next;
         });
         setHistory((h) => [...h, { player: aiId, flat: move }]);
+        playClick();
       }
       setAiThinking(false);
     }, 400);
     return () => { clearTimeout(t); setAiThinking(false); };
-  }, [turn, isAI, result, board, lines, difficulty, N]);
+  }, [turn, isAI, result, board, lines, difficulty, N, playClick]);
 
-  // Record game result to backend
+  // Auto-save in-progress local game (not vs AI, not finished, user signed in)
+  useEffect(() => {
+    if (!user || isAI || result || history.length === 0) return;
+    const t = setTimeout(() => {
+      api.post("/games/saved", { board_size: N, mode, moves: history }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [history, user, isAI, result, N, mode]);
+
+  // Record completed game; clear saved game on completion
   useEffect(() => {
     if (!result || recordedRef.current) return;
     if (!user) return;
@@ -102,14 +140,12 @@ export default function Play() {
     let myResult;
     if (result.draw) myResult = "draw";
     else if (isAI) myResult = result.winner === humanId ? "win" : "loss";
-    else myResult = "win"; // local games are recorded as a win for the account holder
+    else myResult = "win";
     api.post("/games/record", {
-      board_size: N,
-      mode,
-      result: myResult,
-      moves: history.length,
+      board_size: N, mode, result: myResult, moves: history.length,
       duration_ms: Date.now() - startedAt.current,
     }).catch(() => {});
+    api.delete("/games/saved").catch(() => {});
   }, [result, user, isAI, N, mode, history.length]);
 
   const resetGame = () => {
@@ -117,18 +153,39 @@ export default function Play() {
     setHistory([]);
     setTurn(0);
     setResult(null);
+    setShareUrl(null);
+    setCopied(false);
     recordedRef.current = false;
     startedAt.current = Date.now();
+    if (user) api.delete("/games/saved").catch(() => {});
   };
 
   const resetView = () => setResetToken((t) => t + 1);
 
+  const shareReplay = async () => {
+    try {
+      const { data } = await api.post("/replays", {
+        board_size: N, mode, moves: history,
+        winner: result?.winner ?? null,
+        result: result?.draw ? "draw" : (isAI ? (result?.winner === humanId ? "win" : "loss") : "win"),
+        player_name: user?.name || "Guest",
+      });
+      const url = `${window.location.origin}/replay/${data.replay_id}`;
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch { /* ignore */ }
+    } catch { /* ignore */ }
+  };
+
   const currentPlayer = result ? null : turn;
   const disabled = !!result || (isAI && turn === aiId);
+  const canUndo = !isAI && !result && history.length > 0;
 
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden" data-testid="play-screen">
-      {/* 3D board full-bleed */}
       <div className="absolute inset-0">
         <Board3D
           N={N}
@@ -142,7 +199,6 @@ export default function Play() {
         />
       </div>
 
-      {/* HUD: Top-left player panel */}
       <div className="absolute top-4 left-4 z-30 glass rounded-lg p-4 w-[260px] max-w-[80vw]" data-testid="player-panel">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] tracking-[0.3em] uppercase text-[#00F0FF]">Match</div>
@@ -156,9 +212,7 @@ export default function Play() {
               <div
                 key={p}
                 data-testid={`player-row-${p}`}
-                className={`flex items-center gap-3 px-3 py-2 rounded border transition-all ${
-                  active ? "border-[#00F0FF] bg-[#00F0FF]/10" : "border-[#00F0FF]/10"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 rounded border transition-all ${active ? "border-[#00F0FF] bg-[#00F0FF]/10" : "border-[#00F0FF]/10"}`}
               >
                 <div className="w-7 h-7 rounded flex items-center justify-center font-hud text-lg" style={{ color: PLAYER_COLORS[p], textShadow: `0 0 10px ${PLAYER_COLORS[p]}` }}>
                   {MARK_SYMBOL[p]}
@@ -174,13 +228,20 @@ export default function Play() {
         </div>
       </div>
 
-      {/* HUD: Top-right controls */}
       <div className="absolute top-4 right-4 z-30 flex flex-col gap-2" data-testid="controls-panel">
         <button onClick={resetView} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] transition flex items-center gap-2" data-testid="reset-view-btn">
           <RotateCcw className="w-3.5 h-3.5" /> Reset View
         </button>
         <button onClick={() => setExploded((x) => !x)} className={`glass rounded px-3 py-2 text-xs hover:text-[#00F0FF] transition flex items-center gap-2 ${exploded ? "text-[#00F0FF]" : "text-slate-200"}`} data-testid="explode-toggle-btn">
           <Layers className="w-3.5 h-3.5" /> {exploded ? "Collapse" : "Exploded"}
+        </button>
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          className={`glass rounded px-3 py-2 text-xs transition flex items-center gap-2 ${canUndo ? "text-slate-200 hover:text-[#00F0FF]" : "text-slate-600 opacity-50 cursor-not-allowed"}`}
+          data-testid="undo-btn"
+        >
+          <Undo2 className="w-3.5 h-3.5" /> Undo
         </button>
         <button onClick={resetGame} className="glass rounded px-3 py-2 text-xs text-slate-200 hover:text-[#00F0FF] transition flex items-center gap-2" data-testid="new-game-btn">
           <RefreshCw className="w-3.5 h-3.5" /> New Game
@@ -190,7 +251,6 @@ export default function Play() {
         </Link>
       </div>
 
-      {/* Move history bottom-right */}
       <div className="absolute bottom-4 right-4 z-30 glass rounded-lg p-3 w-[260px] max-w-[80vw] max-h-[260px] flex flex-col" data-testid="history-panel">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[10px] tracking-[0.3em] uppercase text-[#00F0FF]">Move Log</div>
@@ -211,7 +271,6 @@ export default function Play() {
         </div>
       </div>
 
-      {/* Bottom-center turn indicator */}
       {!result && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-5 py-2 flex items-center gap-3" data-testid="turn-indicator">
           <span className="font-hud text-xl" style={{ color: PLAYER_COLORS[turn], textShadow: `0 0 12px ${PLAYER_COLORS[turn]}` }}>{MARK_SYMBOL[turn]}</span>
@@ -221,7 +280,6 @@ export default function Play() {
         </div>
       )}
 
-      {/* Result overlay */}
       <AnimatePresence>
         {result && (
           <motion.div
@@ -235,7 +293,7 @@ export default function Play() {
               initial={{ scale: 0.88, y: 16, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               transition={{ type: "spring", damping: 18 }}
-              className="glass rounded-2xl p-8 text-center w-[420px] max-w-[92vw] glow-box-lg"
+              className="glass rounded-2xl p-8 text-center w-[460px] max-w-[92vw] glow-box-lg"
             >
               {result.draw ? (
                 <>
@@ -255,12 +313,21 @@ export default function Play() {
                 </>
               )}
               <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                <button onClick={resetGame} className="btn-primary" data-testid="play-again-btn">
-                  Play again
+                <button onClick={resetGame} className="btn-primary" data-testid="play-again-btn">Play again</button>
+                <button onClick={shareReplay} className="btn-ghost inline-flex items-center gap-1.5" data-testid="share-btn">
+                  {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Share2 className="w-3.5 h-3.5" /> Share replay</>}
                 </button>
                 <Link to="/lobby" className="btn-ghost">New setup</Link>
                 {user && <Link to="/profile" className="btn-ghost inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" />Stats</Link>}
               </div>
+              {shareUrl && (
+                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded border border-[#00F0FF]/30 bg-[#00F0FF]/5" data-testid="share-url">
+                  <input value={shareUrl} readOnly onClick={(e) => e.target.select()} className="flex-1 bg-transparent font-mono text-[11px] text-[#00F0FF] outline-none" />
+                  <button onClick={() => { navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(()=>setCopied(false), 2000); }} className="text-slate-300 hover:text-[#00F0FF] transition" data-testid="copy-url-btn" aria-label="Copy">
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
