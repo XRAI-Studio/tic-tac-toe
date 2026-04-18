@@ -15,7 +15,12 @@ export default function Lobby() {
 
   useEffect(() => {
     if (!user) { setSaved(null); return; }
-    api.get("/games/saved").then(({ data }) => setSaved(data)).catch(() => setSaved(null));
+    api.get("/games/saved")
+      .then(({ data }) => setSaved(data))
+      .catch((err) => {
+        if (process.env.NODE_ENV !== "production") console.debug("[lobby] saved-game fetch failed:", err?.message);
+        setSaved(null);
+      });
   }, [user]);
 
   const start = () => navigate(`/play?size=${size}&mode=${mode}`);

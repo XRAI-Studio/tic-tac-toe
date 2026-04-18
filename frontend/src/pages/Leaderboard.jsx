@@ -35,7 +35,10 @@ export default function Leaderboard() {
     setLoading(true);
     api.get(`/leaderboard?${q.toString()}`)
       .then(({ data }) => setRows(data))
-      .catch(() => setRows([]))
+      .catch((err) => {
+        if (process.env.NODE_ENV !== "production") console.debug("[leaderboard] fetch failed:", err?.message);
+        setRows([]);
+      })
       .finally(() => setLoading(false));
   }, [size, mode, period]);
 

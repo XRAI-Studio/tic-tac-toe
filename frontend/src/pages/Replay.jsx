@@ -22,7 +22,10 @@ export default function Replay() {
   useEffect(() => {
     api.get(`/replays/${id}`)
       .then(({ data }) => setReplay(data))
-      .catch(() => navigate("/", { replace: true }))
+      .catch((err) => {
+        if (process.env.NODE_ENV !== "production") console.debug("[replay] fetch failed:", err?.message);
+        navigate("/", { replace: true });
+      })
       .finally(() => setLoading(false));
   }, [id, navigate]);
 

@@ -8,9 +8,9 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials - created via mongosh for Phase 2
-TEST_SESSION_TOKEN = "test_session_phase2_1776475809546"
-TEST_USER_ID = "test-user-phase2-1776475809546"
+# Test credentials — read from environment with safe test defaults (see test_cube3_api.py).
+TEST_SESSION_TOKEN = os.environ.get("CUBE3_PHASE2_SESSION_TOKEN", "test_session_phase2_1776475809546")
+TEST_USER_ID = os.environ.get("CUBE3_PHASE2_USER_ID", "test-user-phase2-1776475809546")
 
 
 class TestSavedGamesEndpoints:
@@ -69,7 +69,7 @@ class TestSavedGamesEndpoints:
         response = requests.post(f"{BASE_URL}/api/games/saved", json=payload, headers=headers)
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") == True
+        assert data.get("ok") is True
         print("✓ POST /api/games/saved with token saves game")
     
     def test_get_saved_game_returns_doc_when_exists(self):
@@ -155,7 +155,7 @@ class TestSavedGamesEndpoints:
         response = requests.delete(f"{BASE_URL}/api/games/saved", headers=headers)
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") == True
+        assert data.get("ok") is True
         
         # Verify it's gone
         response = requests.get(f"{BASE_URL}/api/games/saved", headers=headers)
@@ -294,7 +294,7 @@ class TestReplayEndpoints:
         assert data["winner"] is None
         assert data["result"] == "draw"
         
-        print(f"✓ POST /api/replays handles draw result correctly")
+        print("✓ POST /api/replays handles draw result correctly")
 
 
 if __name__ == "__main__":

@@ -23,8 +23,12 @@ export default function Profile() {
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate("/"); return; }
-    api.get(`/users/stats/${user.user_id}`).then(({ data }) => setStats(data)).catch(() => {});
-    api.get(`/games/history/${user.user_id}`).then(({ data }) => setHistory(data)).catch(() => {});
+    api.get(`/users/stats/${user.user_id}`).then(({ data }) => setStats(data)).catch((err) => {
+      if (process.env.NODE_ENV !== "production") console.debug("[profile] stats fetch failed:", err?.message);
+    });
+    api.get(`/games/history/${user.user_id}`).then(({ data }) => setHistory(data)).catch((err) => {
+      if (process.env.NODE_ENV !== "production") console.debug("[profile] history fetch failed:", err?.message);
+    });
   }, [user, loading, navigate]);
 
   if (loading || !user) return null;

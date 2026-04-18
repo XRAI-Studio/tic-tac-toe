@@ -12,7 +12,8 @@ export function AuthProvider({ children }) {
       if (!getAuthToken()) { setUser(null); setLoading(false); return; }
       const { data } = await api.get("/auth/me");
       setUser(data);
-    } catch (_e) {
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") console.debug("[auth] session check failed:", err?.message);
       setUser(null);
       setAuthToken(null);
     } finally {
@@ -30,7 +31,10 @@ export function AuthProvider({ children }) {
   }, [checkAuth]);
 
   const logout = async () => {
-    try { await api.post("/auth/logout"); } catch (_e) { /* ignore */ }
+    try { await api.post("/auth/logout"); }
+    catch (err) {
+      if (process.env.NODE_ENV !== "production") console.debug("[auth] logout request failed:", err?.message);
+    }
     setAuthToken(null);
     setUser(null);
   };

@@ -343,11 +343,12 @@ async def user_stats(user_id: str):
 
 def _period_filter(period: str) -> dict:
     now = datetime.now(timezone.utc)
+    cutoff: Optional[datetime] = None
     if period == "weekly":
         cutoff = now - timedelta(days=7)
     elif period == "monthly":
         cutoff = now - timedelta(days=30)
-    else:
+    if cutoff is None:
         return {}
     return {"created_at": {"$gte": cutoff.isoformat()}}
 

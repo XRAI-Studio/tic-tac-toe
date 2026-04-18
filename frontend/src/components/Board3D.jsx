@@ -151,7 +151,7 @@ function CubeBoard({ N, board, currentPlayer, onPlay, winningLine, disabled, exp
     <group>
       {positions.map((pos, fi) => (
         <Cell
-          key={fi}
+          key={`cell-${fi}`}
           position={pos}
           size={cellSize}
           flatIndex={fi}

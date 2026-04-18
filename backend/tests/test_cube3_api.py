@@ -8,10 +8,12 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials - created via mongosh
-TEST_SESSION_TOKEN = "test_session_1776474990472"
-TEST_USER_ID = "test-user-1776474990472"
-NOVA_USER_ID = "user_e44045b830c2"  # Seeded user
+# Test credentials — read from environment with safe test defaults so secrets
+# never have to live in source. Set CUBE3_TEST_SESSION_TOKEN / CUBE3_TEST_USER_ID
+# in your shell or CI before running pytest.
+TEST_SESSION_TOKEN = os.environ.get("CUBE3_TEST_SESSION_TOKEN", "test_session_1776474990472")
+TEST_USER_ID = os.environ.get("CUBE3_TEST_USER_ID", "test-user-1776474990472")
+NOVA_USER_ID = os.environ.get("CUBE3_NOVA_USER_ID", "user_e44045b830c2")  # Seeded user
 
 
 class TestRootEndpoint:
@@ -298,7 +300,7 @@ class TestLogout:
         response = requests.post(f"{BASE_URL}/api/auth/logout")
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") == True
+        assert data.get("ok") is True
         
         print("✓ /api/auth/logout returns ok:true")
 
