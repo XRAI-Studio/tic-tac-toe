@@ -62,7 +62,7 @@ gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b 127.0.0.1:8001 server:app
 
 Pick the guide that matches your Hostinger plan:
 
-- **Hostinger Business / Premium / Cloud** (shared hosting with Node.js + MySQL) →  **[DEPLOYMENT_HOSTINGER_BUSINESS.md](./DEPLOYMENT_HOSTINGER_BUSINESS.md)** — uses `backend-node/` (Express + MySQL), everything runs on the existing plan, no extra cost.
+- **Hostinger Business / Premium / Cloud** (shared hosting with Node.js + MySQL) →  **[DEPLOYMENT_HOSTINGER_BUSINESS.md](./DEPLOYMENT_HOSTINGER_BUSINESS.md)** — uses `backend-node/` (Express + MySQL). Includes **GitHub auto-deploy** (`.github/workflows/deploy.yml`) that ships every push to `main` straight to Hostinger via SSH + rsync.
 - **Hostinger VPS** (KVM 1+) → **[DEPLOYMENT_HOSTINGER.md](./DEPLOYMENT_HOSTINGER.md)** — uses `backend/` (FastAPI + MongoDB Atlas) with nginx + systemd.
 
 Both backends expose identical `/api/*` endpoints, so the React frontend is the same regardless of which you pick.

@@ -1,0 +1,83 @@
+name: Deploy to Hostinger Business
+
+# Triggers on every push to main; change to 'workflow_dispatch' only if you prefer manual deploys.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: hostinger-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+          cache-dependency-path: frontend/yarn.lock
+
+      # ---------------- Frontend build ----------------
+      - name: Install frontend deps
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
+          WDS_SOCKET_PORT: 443
+        run: yarn build
+
+      # ---------------- Backend install (produces node_modules) ----------------
+      - name: Install backend deps
+        working-directory: backend-node
+        run: |
+          rm -rf node_modules
+          yarn install --frozen-lockfile --production
+
+      # ---------------- Deploy via SSH + rsync ----------------
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.HOSTINGER_SSH_PORT }} -H ${{ secrets.HOSTINGER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload frontend build → public_html
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} -o StrictHostKeyChecking=accept-new" \
+            --exclude '.htaccess' \
+            frontend/build/ \
+            ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_PUBLIC_HTML }}/
+
+      - name: Upload backend-node → application folder
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} -o StrictHostKeyChecking=accept-new" \
+            --exclude '.env' \
+            --exclude '.git' \
+            backend-node/ \
+            ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_APP_ROOT }}/
+
+      - name: Apply DB migrations & restart Node app
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            "cd ${{ secrets.HOSTINGER_APP_ROOT }} && node migrate.js && mkdir -p tmp && touch tmp/restart.txt"
+
+      - name: Smoke-test the API
+        run: |
+          sleep 5
+          curl -fsSL "${{ secrets.REACT_APP_BACKEND_URL }}/api/" | grep -q "Cube3 Tic-Tac-Toe API"
+          echo "✅ Deploy succeeded"

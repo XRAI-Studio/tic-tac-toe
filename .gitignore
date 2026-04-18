@@ -1,3 +1,12 @@
+# --- Cube3 additions ---
+backend/.env
+backend-node/.env
+frontend/.env
+frontend/build/
+test_reports/
+.ruff_cache/
+.pytest_cache/
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # IDE and editors
