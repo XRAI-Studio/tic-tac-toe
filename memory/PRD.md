@@ -46,6 +46,14 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - `.env.example` files for backend and frontend
 - Production README
 
+**Phase 4 (2026-02-18) — Hostinger Business compatibility**
+- Full Node.js + Express + MySQL backend rewrite at `/app/backend-node/`
+- Identical `/api/*` surface to the Python version (no frontend changes needed)
+- MySQL schema (schema.sql), idempotent migrate.js, seed.js
+- Smoke-tested against local MariaDB — all endpoints return correct JSON
+- `DEPLOYMENT_HOSTINGER_BUSINESS.md` — step-by-step guide for Hostinger Business (shared) hosting using built-in Node.js + MySQL
+- README now routes users to the right deploy guide based on their plan
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account

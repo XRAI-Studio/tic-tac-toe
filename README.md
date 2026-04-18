@@ -58,10 +58,14 @@ pip install -r requirements.txt gunicorn
 gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b 127.0.0.1:8001 server:app
 ```
 
-## Deploying to Hostinger
-See **[DEPLOYMENT_HOSTINGER.md](./DEPLOYMENT_HOSTINGER.md)** for a full, tested, copy-paste walkthrough for Hostinger VPS + MongoDB Atlas + nginx + HTTPS.
+## Deploying
 
-A one-paragraph summary: Because Cube3 uses a Python (FastAPI) backend, the **Hostinger VPS plan** is required (shared-hosting Python cPanel also works if you only need the frontend — but the backend cannot run on shared hosting without Python/uvicorn/systemd). The guide covers VPS provisioning, MongoDB Atlas setup (free tier), deploying the React build, running FastAPI as a systemd service behind nginx, TLS via Let's Encrypt, and subdomain/subdirectory routing recommendations.
+Pick the guide that matches your Hostinger plan:
+
+- **Hostinger Business / Premium / Cloud** (shared hosting with Node.js + MySQL) →  **[DEPLOYMENT_HOSTINGER_BUSINESS.md](./DEPLOYMENT_HOSTINGER_BUSINESS.md)** — uses `backend-node/` (Express + MySQL), everything runs on the existing plan, no extra cost.
+- **Hostinger VPS** (KVM 1+) → **[DEPLOYMENT_HOSTINGER.md](./DEPLOYMENT_HOSTINGER.md)** — uses `backend/` (FastAPI + MongoDB Atlas) with nginx + systemd.
+
+Both backends expose identical `/api/*` endpoints, so the React frontend is the same regardless of which you pick.
 
 ## Key routes
 | Route              | Auth?  | Description                                   |
