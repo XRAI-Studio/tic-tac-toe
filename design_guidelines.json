@@ -1,0 +1,135 @@
+{
+  "theme_and_archetype": {
+    "domain": "Gaming / 3D Strategy",
+    "theme": "Dark",
+    "archetype": "7 (Electric & Neon)",
+    "rationale": "The user explicitly requested a glowing blue neon / arcade aesthetic theme with a deep dark backdrop. The design avoids all purple gradients and relies strictly on high-contrast neon cyan/blue hues against void black to create a premium 3D strategy game feel."
+  },
+  "colors": {
+    "background": {
+      "main": "#05050A",
+      "surface": "#0A0D14",
+      "surface_elevated": "#121822",
+      "glass": "rgba(5, 5, 10, 0.6)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#94A3B8",
+      "muted": "#475569"
+    },
+    "brand": {
+      "primary": "#00F0FF",
+      "primary_hover": "#00C3FF",
+      "secondary": "#007AFF"
+    },
+    "game_pieces": {
+      "player_1_x": "#00F0FF",
+      "player_2_o": "#FF5500",
+      "player_3_triangle": "#00FF66"
+    },
+    "borders": {
+      "subtle": "rgba(0, 240, 255, 0.15)",
+      "active": "rgba(0, 240, 255, 0.5)",
+      "glow": "0 0 15px rgba(0, 240, 255, 0.3)"
+    },
+    "forbidden_colors": [
+      "#9D4CDD",
+      "purple",
+      "violet",
+      "magenta",
+      "teal (#1B93A4)",
+      "pink"
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": "'Outfit', sans-serif",
+      "body": "'IBM Plex Mono', monospace",
+      "hud_numbers": "'Orbitron', sans-serif"
+    },
+    "rules": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-bold uppercase text-white drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-semibold uppercase text-white",
+      "body": "text-base leading-relaxed tracking-wide text-[#94A3B8]",
+      "labels": "text-xs uppercase tracking-[0.2em] font-bold text-[#00F0FF]"
+    }
+  },
+  "layout_and_spacing": {
+    "general": {
+      "spacing_scale": "Use generous padding (p-6, p-8) for dashboard cards to avoid cramping text.",
+      "page_wrapper": "min-h-screen bg-[#05050A] text-white flex flex-col overflow-x-hidden selection:bg-[#00F0FF]/30"
+    },
+    "game_screen": {
+      "structure": "Full-bleed absolute relative container for the Three.js canvas. Overlaid with absolute positioned HUD panels (z-50) using pointer-events-none for wrapper and pointer-events-auto for interactive elements.",
+      "hud_panels": "Top-left for Scores/Players, Top-right for Menus/Reset/Controls, Bottom-center for Turn Indicator & Move History."
+    },
+    "dashboard_profile": {
+      "grid": "Bento Grid style ('Control Room Grid'). grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6.",
+      "cards": "Dark, flat surfaces with 1px border (`border-[#00F0FF]/20`). Avoid heavy shadows; use a subtle inset glow or drop-shadow."
+    }
+  },
+  "surfaces_and_components": {
+    "hud_glassmorphism": {
+      "classes": "backdrop-blur-xl bg-[#05050A]/60 border border-[#00F0FF]/20 shadow-[0_0_15px_rgba(0,240,255,0.05)] rounded-lg",
+      "usage": "In-game overlays, turn indicators, mini-menus, and floating modals."
+    },
+    "buttons": {
+      "primary": "bg-transparent border border-[#00F0FF] text-[#00F0FF] hover:bg-[#00F0FF]/10 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all duration-300 rounded uppercase tracking-wider px-6 py-3 font-bold",
+      "ghost": "text-slate-400 hover:text-white hover:bg-white/5 transition-colors rounded px-4 py-2"
+    },
+    "components": {
+      "tables": "Shadcn tables with custom dark colors. Minimal row borders. Table header text should be cyan (`text-[#00F0FF]`).",
+      "forms": "Shadcn form elements customized for dark mode. Inputs have transparent backgrounds, subtle borders, and neon glow on focus (`focus:ring-[#00F0FF]/40`).",
+      "tabs": "Shadcn tabs. Active states highlighted with cyan color and subtle text shadow, overriding the default white background."
+    }
+  },
+  "visual_enhancers": {
+    "3d_rules": {
+      "environment": "Use ambient lighting and point lights in R3F to create depth. No flat lighting. Ensure materials reflect light.",
+      "board_materials": "Use a transparent/glass-like MeshPhysicalMaterial for the cube grid to allow visibility of inner cells (transmission, opacity).",
+      "win_glow": "Utilize @react-three/postprocessing (Bloom pass) to make the winning line and placed pieces (X, O, Triangle) physically glow in 3D space.",
+      "animations": "Use smooth Lerping for the camera 'reset view' and 'exploded view' layer separation. Hover ghost previews should have opacity: 0.3."
+    },
+    "motion": {
+      "hover": "Interactive UI elements must transition smoothly (background, border, box-shadow).",
+      "transitions": "Use Framer Motion for page transitions and staggering list elements (e.g., leaderboard rows, history items)."
+    }
+  },
+  "media": {
+    "images": {
+      "hero_background": {
+        "url": "https://images.unsplash.com/photo-1763596396590-81193928cdeb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NjZ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRhcmslMjBibHVlJTIwZ2xvd2luZyUyMGdlb21ldHJ5fGVufDB8fHx8MTc3NjQ3MjE2NHww&ixlib=rb-4.1.0&q=85",
+        "category": "Hero / Lobby Background",
+        "description": "Abstract dark blue glowing geometry, to be used behind the lobby/menu screens with low opacity as a massive atmospheric texture."
+      },
+      "dashboard_texture": {
+        "url": "https://images.pexels.com/photos/6485438/pexels-photo-6485438.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "Profile / Dashboard Background",
+        "description": "Dark weathered metal texture. Apply heavily reduced opacity (e.g., 5-10%) via absolute positioning to give depth to profile pages."
+      },
+      "avatar_1": {
+        "url": "https://images.pexels.com/photos/7047671/pexels-photo-7047671.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "Player Avatar Dummy",
+        "description": "Gamer portrait for dummy player profiles in the UI."
+      },
+      "avatar_2": {
+        "url": "https://images.pexels.com/photos/7046708/pexels-photo-7046708.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "Player Avatar Dummy 2",
+        "description": "Secondary gamer portrait for local multiplayer previews."
+      }
+    }
+  },
+  "testing": {
+    "attributes": "All interactive and key informational elements MUST include a `data-testid` attribute (kebab-case, role-based, e.g., `data-testid='start-game-btn'`)."
+  },
+  "instructions_to_main_agent": [
+    "Install Three.js, @react-three/fiber, @react-three/drei, and @react-three/postprocessing for the 3D board rendering and bloom/glow effects.",
+    "Install custom fonts via Google Fonts: Outfit, IBM Plex Mono, and Orbitron.",
+    "Implement the UI using pure Tailwind CSS with deep dark colors. Strictly avoid any purples (#9D4CDD) as explicitly requested by the user.",
+    "The 3D canvas must have drag-rotate and scroll-zoom. Add HUD controls to trigger a 'reset view' camera lerp and a toggle for 'exploded view'.",
+    "Player marks must be distinctly colored: P1=Cyan (#00F0FF, X), P2=Orange (#FF5500, O), P3=Green (#00FF66, ▲).",
+    "Construct the Profile and Leaderboard pages utilizing the Bento Grid layout structure mapped out in layout_and_spacing.",
+    "Auth can use dummy states initially, but ensure the routing securely isolates guest vs authenticated views.",
+    "Never use generic placeholder images; rely strictly on the media URLs provided in this file."
+  ]
+}
