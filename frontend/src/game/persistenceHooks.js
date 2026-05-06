@@ -71,10 +71,11 @@ export function useGameRecorder({ user, isAI, result, N, mode, history, startedA
   return { recordedRef };
 }
 
-/** Owns the share-replay flow + clipboard copy state. */
+/** Owns the share-replay flow: native OS share sheet on mobile/PWA, clipboard fallback elsewhere. */
 export function useShareReplay({ N, mode, isAI, history, result, user }) {
   const [shareUrl, setShareUrl] = useState(null);
   const [copied, setCopied]     = useState(false);
+  const [shared, setShared]     = useState(false);
 
   const computeOutcome = () => {
     if (result?.draw) return "draw";
@@ -82,17 +83,52 @@ export function useShareReplay({ N, mode, isAI, history, result, user }) {
     return "win";
   };
 
+  // Build a punchy share message tailored to the outcome. Pure presentation,
+  // no PII (replay URL contains a non-guessable 10-char id only).
+  const buildShareText = (outcome) => {
+    const dim = `${N}×${N}×${N}`;
+    if (outcome === "draw") return `Drew a ${dim} 3D Tic-Tac-Toe match in ${history.length} moves. Watch the replay 👇`;
+    if (outcome === "loss") return `Lost a tense ${dim} 3D Tic-Tac-Toe match. Think you can do better? 👇`;
+    return `Just won a ${dim} 3D Tic-Tac-Toe match in ${history.length} moves! 🎯`;
+  };
+
   const shareReplay = useCallback(async () => {
     try {
+      const outcome = computeOutcome();
       const payload = {
         board_size: N, mode, moves: history,
         winner: result?.winner ?? null,
-        result: computeOutcome(),
+        result: outcome,
         player_name: user?.name || "Guest",
       };
       const { data } = await api.post("/replays", payload);
       const url = `${window.location.origin}/replay/${data.replay_id}`;
       setShareUrl(url);
+
+      const shareData = {
+        title: "Cube3 — 3D Tic-Tac-Toe",
+        text:  buildShareText(outcome),
+        url,
+      };
+
+      // Prefer the OS share sheet (Android Chrome, iOS Safari, installed PWAs).
+      // canShare() guards against desktop browsers that expose share() but reject some payloads.
+      if (typeof navigator !== "undefined"
+          && navigator.share
+          && (typeof navigator.canShare !== "function" || navigator.canShare(shareData))) {
+        try {
+          await navigator.share(shareData);
+          setShared(true);
+          setTimeout(() => setShared(false), 2200);
+          return;
+        } catch (shareErr) {
+          // AbortError = user dismissed picker — silent. Other errors fall through to clipboard.
+          if (shareErr?.name === "AbortError") return;
+          debug("[share] native share failed, falling back to clipboard:", shareErr?.message);
+        }
+      }
+
+      // Clipboard fallback (desktop, or browsers without Web Share API).
       try {
         await navigator.clipboard.writeText(url);
         setCopied(true);
@@ -106,5 +142,5 @@ export function useShareReplay({ N, mode, isAI, history, result, user }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- computeOutcome is intentionally stable
   }, [N, mode, history, result, isAI, user]);
 
-  return { shareUrl, copied, setCopied, setShareUrl, shareReplay };
+  return { shareUrl, copied, setCopied, setShareUrl, shared, shareReplay };
 }

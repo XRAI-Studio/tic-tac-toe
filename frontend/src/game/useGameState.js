@@ -116,6 +116,7 @@ export function useGameState({ N, mode, isAI, difficulty, numPlayers, user, resu
     copied:   share.copied,
     setCopied: share.setCopied,
     setShareUrl: share.setShareUrl,
+    shared:   share.shared,
     play, undo, reset,
     shareReplay: share.shareReplay,
   };

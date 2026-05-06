@@ -317,7 +317,12 @@ function winLabel(result, isAI) {
   return `${PLAYER_NAMES[result.winner]} wins`;
 }
 
-function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, setCopied }) {
+function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, shared, setCopied }) {
+  const shareLabel = shared
+    ? <><Check className="w-3.5 h-3.5" /> Shared!</>
+    : copied
+      ? <><Check className="w-3.5 h-3.5" /> Copied!</>
+      : <><Share2 className="w-3.5 h-3.5" /> Share replay</>;
   return (
     <AnimatePresence>
       {result && (
@@ -351,7 +356,7 @@ function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl
             <div className="mt-6 flex flex-wrap gap-2 justify-center">
               <button onClick={onReset} className="btn-primary" data-testid="play-again-btn">Play again</button>
               <button onClick={onShare} className="btn-ghost inline-flex items-center gap-1.5" data-testid="share-btn">
-                {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Share2 className="w-3.5 h-3.5" /> Share replay</>}
+                {shareLabel}
               </button>
               <Link to="/lobby" className="btn-ghost">New setup</Link>
               {user && <Link to="/profile" className="btn-ghost inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" />Stats</Link>}
@@ -515,7 +520,7 @@ export default function Play() {
       <ResultOverlay
         result={game.result} isAI={isAI} history={game.history} user={user}
         onReset={game.reset} onShare={game.shareReplay}
-        shareUrl={game.shareUrl} copied={game.copied} setCopied={game.setCopied}
+        shareUrl={game.shareUrl} copied={game.copied} shared={game.shared} setCopied={game.setCopied}
       />
     </div>
   );

@@ -73,6 +73,12 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - **Deterministic Test Session Tokens** — `seed.py` now idempotently upserts three 1-year tokens (`test_session_nova`/`orion`/`zen`); `test_credentials.md` rewritten with curl examples
 - Verified via testing agent iteration 7: 100% backend (13/13), 100% frontend
 
+**Phase 5c (2026-02-19) — Native Share Sheet**
+- `useShareReplay` upgraded with **Web Share API** path (mobile/PWA): tries `navigator.share()` first with outcome-tailored title/text/url, falls back to clipboard on desktop or unsupported browsers, silent no-op on user-cancel (AbortError)
+- Outcome-aware share copy: win = "Just won a 3×3×3 3D Tic-Tac-Toe match in 12 moves! 🎯", loss/draw variants too
+- New `shared` state surfaces "Shared!" feedback on the result-overlay button
+- Architectural comment added in `api.js` explaining the localStorage+httpOnly-cookie auth fallback strategy (prevents future devs from removing the Bearer fallback and breaking Safari ITP users)
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account
