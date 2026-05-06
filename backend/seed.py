@@ -1,8 +1,14 @@
-"""Seed script for Cube3 — creates demo users and games so leaderboard isn't empty."""
+"""Seed script for Cube3 — creates demo users and games so leaderboard isn't empty.
+
+NOTE: this script uses Python's `random` module deliberately for generating
+demo timestamps and shuffling sample data. Nothing here is security-sensitive
+(no tokens, passwords, or auth material), so `random` is the right tool —
+`secrets` would be inappropriate.
+"""
 import asyncio
 import os
 import uuid
-import random
+import random  # noqa: S311 — non-crypto demo data only
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 

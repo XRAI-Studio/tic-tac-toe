@@ -1,13 +1,13 @@
-// Encapsulates Cube3 game state, AI turns, auto-save, result-recording and replay-sharing.
-// Extracted from Play.jsx to keep the page component thin.
+// Cube3 game-state orchestrator hook.
+// Composes lifecycle (board/history/turn/result/AI) with persistence side-effects.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { checkWinner, cloneBoard, emptyBoard, generateLines, isDraw } from "./logic";
 import { pickAIMove } from "./ai";
 import api from "../api";
+import { useAutoSave, useGameRecorder, useResume, useShareReplay } from "./persistenceHooks";
 
 const HUMAN_ID = 0;
-const AI_ID = 1;
-const AUTOSAVE_DELAY_MS = 600;
+const AI_ID    = 1;
 const AI_THINK_DELAY_MS = 400;
 
 function deriveResult(board, lines, numPlayers) {
@@ -23,64 +23,40 @@ function applyMove(board, flat, player) {
   return next;
 }
 
-export function useGameState({
-  N,
-  mode,
-  isAI,
-  difficulty,
-  numPlayers,
-  user,
-  resume,
-  sound,
-}) {
+function useSoundRefs(sound) {
+  const click = useRef(sound?.playClick);
+  const win   = useRef(sound?.playWin);
+  const draw  = useRef(sound?.playDraw);
+  useEffect(() => { click.current = sound?.playClick; }, [sound?.playClick]);
+  useEffect(() => { win.current   = sound?.playWin;   }, [sound?.playWin]);
+  useEffect(() => { draw.current  = sound?.playDraw;  }, [sound?.playDraw]);
+  return { click, win, draw };
+}
+
+export function useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound }) {
   const lines = useMemo(() => generateLines(N), [N]);
-
-  const [board, setBoard]       = useState(() => emptyBoard(N));
-  const [history, setHistory]   = useState([]);
-  const [result, setResult]     = useState(null);
+  const [board, setBoard]           = useState(() => emptyBoard(N));
+  const [history, setHistory]       = useState([]);
+  const [result, setResult]         = useState(null);
   const [aiThinking, setAiThinking] = useState(false);
-  const [shareUrl, setShareUrl] = useState(null);
-  const [copied, setCopied]     = useState(false);
 
-  const startedAt   = useRef(Date.now());
-  const recordedRef = useRef(false);
-  const playClickRef = useRef(sound?.playClick);
-  const playWinRef   = useRef(sound?.playWin);
-  const playDrawRef  = useRef(sound?.playDraw);
-  useEffect(() => { playClickRef.current = sound?.playClick; }, [sound?.playClick]);
-  useEffect(() => { playWinRef.current   = sound?.playWin;   }, [sound?.playWin]);
-  useEffect(() => { playDrawRef.current  = sound?.playDraw;  }, [sound?.playDraw]);
-
+  const startedAtRef = useRef(Date.now());
+  const sounds = useSoundRefs(sound);
   const turn = history.length % numPlayers;
 
-  // 1) Resume on first render if asked.
-  useEffect(() => {
-    if (!resume || !user) return;
-    let cancelled = false;
-    api.get("/games/saved").then(({ data }) => {
-      if (cancelled || !data || data.board_size !== N || data.mode !== mode) return;
-      const moves = data.moves || [];
-      let b = emptyBoard(N);
-      for (const m of moves) b = applyMove(b, m.flat, m.player);
-      setBoard(b);
-      setHistory(moves);
-    }).catch((err) => {
-      if (process.env.NODE_ENV !== "production") console.debug("[game] resume failed:", err?.message);
-    });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
-  }, []);
+  // 1) Resume saved game on mount.
+  useResume({ enabled: !!resume && !!user, N, mode, setBoard, setHistory });
 
-  // 2) Detect end of game whenever board changes.
+  // 2) End-of-game detection.
   useEffect(() => {
     const r = deriveResult(board, lines, numPlayers);
     if (!r) return;
     setResult(r);
-    if (r.draw)  playDrawRef.current?.();
-    else         playWinRef.current?.();
-  }, [board, lines, numPlayers]);
+    if (r.draw) sounds.draw.current?.();
+    else        sounds.win.current?.();
+  }, [board, lines, numPlayers, sounds.draw, sounds.win]);
 
-  // 3) AI move when it is the AI's turn.
+  // 3) AI turn.
   useEffect(() => {
     if (!isAI || result || turn !== AI_ID) return;
     setAiThinking(true);
@@ -89,48 +65,26 @@ export function useGameState({
       if (move !== undefined && move !== null) {
         setBoard((prev) => (prev[move] === null ? applyMove(prev, move, AI_ID) : prev));
         setHistory((h) => [...h, { player: AI_ID, flat: move }]);
-        playClickRef.current?.();
+        sounds.click.current?.();
       }
       setAiThinking(false);
     }, AI_THINK_DELAY_MS);
     return () => { clearTimeout(t); setAiThinking(false); };
-  }, [turn, isAI, result, board, lines, difficulty, N]);
+  }, [turn, isAI, result, board, lines, difficulty, N, sounds.click]);
 
-  // 4) Auto-save for signed-in local games in progress.
-  useEffect(() => {
-    if (!user || isAI || result || history.length === 0) return;
-    const t = setTimeout(() => {
-      api.post("/games/saved", { board_size: N, mode, moves: history }).catch((err) => {
-        if (process.env.NODE_ENV !== "production") console.debug("[game] autosave failed:", err?.message);
-      });
-    }, AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [history, user, isAI, result, N, mode]);
+  // 4) Persistence side-effects (autosave + record on finish + share replay).
+  useAutoSave({ user, isAI, result, N, mode, history });
+  const { recordedRef } = useGameRecorder({ user, isAI, result, N, mode, history, startedAtRef });
+  const share = useShareReplay({ N, mode, isAI, history, result, user });
 
-  // 5) Record final result + clear saved slot.
-  useEffect(() => {
-    if (!result || recordedRef.current || !user) return;
-    recordedRef.current = true;
-    let myResult;
-    if (result.draw) myResult = "draw";
-    else if (isAI)   myResult = result.winner === HUMAN_ID ? "win" : "loss";
-    else             myResult = "win";
-    api.post("/games/record", {
-      board_size: N, mode, result: myResult,
-      moves: history.length, duration_ms: Date.now() - startedAt.current,
-    }).catch((err) => {
-      if (process.env.NODE_ENV !== "production") console.debug("[game] record failed:", err?.message);
-    });
-    api.delete("/games/saved").catch(() => {});
-  }, [result, user, isAI, N, mode, history.length]);
-
+  // 5) Player actions.
   const play = useCallback((flat) => {
     if (result || board[flat] !== null) return;
     const current = history.length % numPlayers;
     setBoard((prev) => (prev[flat] === null ? applyMove(prev, flat, current) : prev));
     setHistory((h) => [...h, { player: current, flat }]);
-    playClickRef.current?.();
-  }, [board, history.length, numPlayers, result]);
+    sounds.click.current?.();
+  }, [board, history.length, numPlayers, result, sounds.click]);
 
   const undo = useCallback(() => {
     if (isAI || result || history.length === 0) return;
@@ -142,47 +96,27 @@ export function useGameState({
       next[last.flat] = null;
       return next;
     });
-    playClickRef.current?.();
-  }, [isAI, result, history]);
+    sounds.click.current?.();
+  }, [isAI, result, history, sounds.click]);
 
   const reset = useCallback(() => {
     setBoard(emptyBoard(N));
     setHistory([]);
     setResult(null);
-    setShareUrl(null);
-    setCopied(false);
+    share.setShareUrl(null);
+    share.setCopied(false);
     recordedRef.current = false;
-    startedAt.current = Date.now();
+    startedAtRef.current = Date.now();
     if (user) api.delete("/games/saved").catch(() => {});
-  }, [N, user]);
-
-  const shareReplay = useCallback(async () => {
-    try {
-      const payload = {
-        board_size: N, mode, moves: history,
-        winner: result?.winner ?? null,
-        result: result?.draw ? "draw" : (isAI ? (result?.winner === HUMAN_ID ? "win" : "loss") : "win"),
-        player_name: user?.name || "Guest",
-      };
-      const { data } = await api.post("/replays", payload);
-      const url = `${window.location.origin}/replay/${data.replay_id}`;
-      setShareUrl(url);
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (clipErr) {
-        if (process.env.NODE_ENV !== "production") console.debug("[share] clipboard blocked:", clipErr?.message);
-      }
-    } catch (err) {
-      if (process.env.NODE_ENV !== "production") console.error("[share] create-replay failed:", err);
-    }
-  }, [N, mode, history, result, isAI, user]);
+  }, [N, user, share, recordedRef]);
 
   return {
     board, history, turn, result, aiThinking,
-    shareUrl, copied,
-    play, undo, reset, shareReplay,
-    setCopied, setShareUrl,
+    shareUrl: share.shareUrl,
+    copied:   share.copied,
+    setCopied: share.setCopied,
+    setShareUrl: share.setShareUrl,
+    play, undo, reset,
+    shareReplay: share.shareReplay,
   };
 }

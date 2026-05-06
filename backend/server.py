@@ -81,19 +81,22 @@ class LeaderboardEntry(BaseModel):
 
 
 # ---------- Auth helpers ----------
-async def get_current_user(request: Request) -> Optional[dict]:
+def _extract_token(request: Request) -> Optional[str]:
+    """Pull a session token from cookies first, then `Authorization: Bearer`."""
     token = request.cookies.get("session_token")
-    if not token:
-        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
-        if auth_header and auth_header.lower().startswith("bearer "):
-            token = auth_header.split(" ", 1)[1].strip()
-    if not token:
-        return None
+    if token:
+        return token
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        return auth_header.split(" ", 1)[1].strip()
+    return None
 
+
+async def _load_active_session(token: str) -> Optional[dict]:
+    """Look up a non-expired session by token. Returns the doc or None."""
     session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
     if not session:
         return None
-
     expires_at = session.get("expires_at")
     if isinstance(expires_at, str):
         expires_at = datetime.fromisoformat(expires_at)
@@ -101,37 +104,38 @@ async def get_current_user(request: Request) -> Optional[dict]:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at and expires_at < datetime.now(timezone.utc):
         return None
+    return session
 
+
+async def get_current_user(request: Request) -> Optional[dict]:
+    token = _extract_token(request)
+    if not token:
+        return None
+    session = await _load_active_session(token)
+    if not session:
+        return None
     user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
     return user
 
 
 async def require_user(request: Request) -> dict:
     user = await get_current_user(request)
-    if not user:
+    if not user:  # `is None` is correct PEP 8 idiom; using truthiness is also fine here
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
 
 # ---------- Auth Routes ----------
-@api_router.post("/auth/session")
-async def exchange_session(request: Request, response: Response):
-    body = await request.json()
-    session_id = body.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="session_id required")
-
+async def _fetch_emergent_session(session_id: str) -> dict:
     async with httpx.AsyncClient(timeout=20.0) as hc:
         r = await hc.get(EMERGENT_AUTH_URL, headers={"X-Session-ID": session_id})
     if r.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid session_id")
+    return r.json()
 
-    data = r.json()
-    email = data.get("email")
-    name = data.get("name", email)
-    picture = data.get("picture")
-    session_token = data.get("session_token")
 
+async def _upsert_user(email: str, name: str, picture: Optional[str]) -> str:
+    """Insert or update the user row; returns the canonical user_id."""
     existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
         user_id = existing["user_id"]
@@ -139,15 +143,44 @@ async def exchange_session(request: Request, response: Response):
             {"user_id": user_id},
             {"$set": {"name": name, "picture": picture}}
         )
-    else:
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
-        await db.users.insert_one({
-            "user_id": user_id,
-            "email": email,
-            "name": name,
-            "picture": picture,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+        return user_id
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    await db.users.insert_one({
+        "user_id": user_id,
+        "email": email,
+        "name": name,
+        "picture": picture,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return user_id
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        max_age=SESSION_DAYS * 24 * 60 * 60,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+    )
+
+
+@api_router.post("/auth/session")
+async def exchange_session(request: Request, response: Response):
+    body = await request.json()
+    session_id = body.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+
+    data = await _fetch_emergent_session(session_id)
+    email = data.get("email")
+    name = data.get("name", email)
+    picture = data.get("picture")
+    session_token = data.get("session_token")
+
+    user_id = await _upsert_user(email, name, picture)
 
     expires_at = datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)
     await db.user_sessions.insert_one({
@@ -157,16 +190,7 @@ async def exchange_session(request: Request, response: Response):
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        max_age=SESSION_DAYS * 24 * 60 * 60,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-    )
-
+    _set_session_cookie(response, session_token)
     return {
         "user_id": user_id,
         "email": email,
@@ -307,20 +331,23 @@ async def _compute_user_stats(user_id: str) -> dict:
     draws = sum(1 for g in games if g["result"] == "draw")
     win_rate = (wins / total * 100.0) if total else 0.0
 
+    RESULT_TO_KEY = {"win": "wins", "loss": "losses", "draw": "draws"}
     by_board = {"3": {"games": 0, "wins": 0, "losses": 0, "draws": 0},
                 "4": {"games": 0, "wins": 0, "losses": 0, "draws": 0}}
-    by_mode = {}
+    by_mode: dict = {}
     for g in games:
         b = str(g["board_size"])
+        bucket_key = RESULT_TO_KEY.get(g["result"])
         if b in by_board:
             by_board[b]["games"] += 1
-            by_board[b][g["result"] + "s" if g["result"] in ("win", "loss", "draw") else "games"] = \
-                by_board[b].get(g["result"] + "s", 0) + 1
+            if bucket_key:
+                by_board[b][bucket_key] += 1
         m = g["mode"]
         if m not in by_mode:
             by_mode[m] = {"games": 0, "wins": 0, "losses": 0, "draws": 0}
         by_mode[m]["games"] += 1
-        by_mode[m][g["result"] + "s"] = by_mode[m].get(g["result"] + "s", 0) + 1
+        if bucket_key:
+            by_mode[m][bucket_key] += 1
 
     return {
         "user_id": user_id,
@@ -353,14 +380,8 @@ def _period_filter(period: str) -> dict:
     return {"created_at": {"$gte": cutoff.isoformat()}}
 
 
-@api_router.get("/leaderboard")
-async def leaderboard(
-    board_size: Optional[int] = Query(None),
-    mode: Optional[str] = Query(None),  # 'ai', 'local', 'all'
-    period: Optional[str] = Query("all"),
-    limit: int = 50,
-):
-    q = {}
+def _build_leaderboard_query(board_size: Optional[int], mode: Optional[str], period: Optional[str]) -> dict:
+    q: dict = {}
     if board_size:
         q["board_size"] = board_size
     if mode == "ai":
@@ -368,10 +389,12 @@ async def leaderboard(
     elif mode == "local":
         q["mode"] = {"$in": ["local_2p", "local_3p"]}
     q.update(_period_filter(period or "all"))
+    return q
 
-    games = await db.games.find(q, {"_id": 0}).to_list(20000)
 
-    agg = {}
+def _aggregate_leaderboard(games: List[dict]) -> List[dict]:
+    RESULT_TO_KEY = {"win": "wins", "loss": "losses", "draw": "draws"}
+    agg: dict = {}
     for g in games:
         uid = g["user_id"]
         if uid not in agg:
@@ -382,25 +405,31 @@ async def leaderboard(
                 "games_played": 0, "wins": 0, "losses": 0, "draws": 0,
             }
         agg[uid]["games_played"] += 1
-        if g["result"] == "win":
-            agg[uid]["wins"] += 1
-        elif g["result"] == "loss":
-            agg[uid]["losses"] += 1
-        else:
-            agg[uid]["draws"] += 1
+        bucket = RESULT_TO_KEY.get(g["result"])
+        if bucket:
+            agg[uid][bucket] += 1
 
     rows = []
     for v in agg.values():
         gp = v["games_played"]
         wr = (v["wins"] / gp * 100.0) if gp else 0.0
-        # Score weights ai_hard games more, baseline: wins*3 + draws*1 + win_rate bonus
-        score = v["wins"] * 3 + v["draws"] * 1 + int(wr)
         v["win_rate"] = round(wr, 1)
-        v["score"] = score
+        v["score"] = v["wins"] * 3 + v["draws"] * 1 + int(wr)
         rows.append(v)
-
     rows.sort(key=lambda x: (-x["score"], -x["wins"], -x["win_rate"]))
-    return rows[:limit]
+    return rows
+
+
+@api_router.get("/leaderboard")
+async def leaderboard(
+    board_size: Optional[int] = Query(None),
+    mode: Optional[str] = Query(None),  # 'ai', 'local', 'all'
+    period: Optional[str] = Query("all"),
+    limit: int = 50,
+):
+    q = _build_leaderboard_query(board_size, mode, period)
+    games = await db.games.find(q, {"_id": 0}).to_list(20000)
+    return _aggregate_leaderboard(games)[:limit]
 
 
 @api_router.get("/")

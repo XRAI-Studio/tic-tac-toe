@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Board3D from "../components/Board3D";
 import { cellNotation, PLAYER_COLORS } from "../game/logic";
@@ -6,7 +6,7 @@ import { useGameState } from "../game/useGameState";
 import { useAuth } from "../contexts/AuthContext";
 import { useSound } from "../contexts/SoundContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2, Check, Copy } from "lucide-react";
+import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2, Check, Copy, Layers3 } from "lucide-react";
 
 const PLAYER_NAMES = ["Blue", "Red", "Green"];
 const MARK_SYMBOL  = ["╳", "⚫", "▲"];
@@ -17,6 +17,12 @@ function parseMode(mode) {
   if (mode?.startsWith("ai_")) return { isAI: true, difficulty: mode.slice(3), numPlayers: 2 };
   if (mode === "local_3p")     return { isAI: false, numPlayers: 3 };
   return { isAI: false, numPlayers: 2 };
+}
+
+function statusForPlayer(active, aiThinking, p) {
+  if (!active) return "waiting";
+  if (aiThinking && p === AI_ID) return "thinking…";
+  return "your move";
 }
 
 function PlayerPanel({ N, mode, numPlayers, turn, isAI, aiThinking, difficulty, result }) {
@@ -41,7 +47,7 @@ function PlayerPanel({ N, mode, numPlayers, turn, isAI, aiThinking, difficulty, 
               </div>
               <div className="flex-1">
                 <div className="font-heading uppercase text-xs tracking-wider text-white">{name}</div>
-                <div className="font-mono text-[10px] text-slate-400">{active ? (aiThinking && p === AI_ID ? "thinking…" : "your move") : "waiting"}</div>
+                <div className="font-mono text-[10px] text-slate-400">{statusForPlayer(active, aiThinking, p)}</div>
               </div>
               {active && <div className="w-2 h-2 rounded-full bg-[#2B4FFF] pulse-glow" />}
             </div>
@@ -103,6 +109,11 @@ function HistoryPanel({ history, N }) {
   );
 }
 
+function winLabel(result, isAI) {
+  if (isAI) return result.winner === HUMAN_ID ? "Victory" : "Defeat";
+  return `${PLAYER_NAMES[result.winner]} wins`;
+}
+
 function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, setCopied }) {
   return (
     <AnimatePresence>
@@ -129,7 +140,7 @@ function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl
                   {MARK_SYMBOL[result.winner]} WINS
                 </div>
                 <div className="font-heading font-black uppercase tracking-tighter text-5xl text-white mt-2 glow-text-lg">
-                  {isAI ? (result.winner === HUMAN_ID ? "Victory" : "Defeat") : `${PLAYER_NAMES[result.winner]} wins`}
+                  {winLabel(result, isAI)}
                 </div>
                 <p className="text-slate-400 text-sm mt-3 font-mono">in {history.length} moves</p>
               </>
@@ -157,6 +168,48 @@ function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl
   );
 }
 
+function LevelPicker({ N, activeLevel, onChange }) {
+  const levels = Array.from({ length: N }, (_, i) => i);
+  return (
+    <div className="absolute top-[168px] left-4 z-30 glass rounded-lg p-3 flex flex-col gap-2" data-testid="level-picker">
+      <div className="text-[10px] tracking-[0.3em] uppercase text-[#2B4FFF] flex items-center gap-1.5">
+        <Layers3 className="w-3 h-3" /> Level
+      </div>
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => onChange(null)}
+          data-testid="level-all-btn"
+          className={`px-3 py-1 rounded text-[11px] font-heading uppercase tracking-wider transition-all text-left ${
+            activeLevel === null
+              ? "text-[#2B4FFF] border border-[#2B4FFF]/60 bg-[#2B4FFF]/10"
+              : "text-slate-300 border border-[#2B4FFF]/15 hover:border-[#2B4FFF]/40"
+          }`}
+        >
+          All <span className="text-[9px] text-slate-500 ml-1">(0)</span>
+        </button>
+        {levels.map((L) => (
+          <button
+            key={`lvl-${L}`}
+            onClick={() => onChange(L)}
+            data-testid={`level-${L}-btn`}
+            className={`px-3 py-1 rounded text-[11px] font-heading uppercase tracking-wider transition-all text-left ${
+              activeLevel === L
+                ? "text-[#2B4FFF] border border-[#2B4FFF]/60 bg-[#2B4FFF]/10"
+                : "text-slate-300 border border-[#2B4FFF]/15 hover:border-[#2B4FFF]/40"
+            }`}
+          >
+            L{L + 1} <span className="text-[9px] text-slate-500 ml-1">({L + 1})</span>
+          </button>
+        ))}
+      </div>
+      <div className="text-[9px] text-slate-500 font-mono leading-tight pt-1 border-t border-[#2B4FFF]/10 max-w-[140px]">
+        Drag to rotate 3-axis · Scroll to zoom · Pick a level to click inner cells
+      </div>
+    </div>
+  );
+}
+
+
 export default function Play() {
   const [params] = useSearchParams();
   const { user } = useAuth();
@@ -169,8 +222,23 @@ export default function Play() {
   const N = size === 4 ? 4 : 3;
 
   const game = useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound });
-  const [exploded, setExploded]     = useState(false);
-  const [resetToken, setResetToken] = useState(0);
+  const [exploded, setExploded]         = useState(false);
+  const [resetToken, setResetToken]     = useState(0);
+  const [activeLevel, setActiveLevel]   = useState(null);
+
+  // Keyboard shortcuts: 0 = All levels · 1-4 = lock to that level
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA") return;
+      if (e.key === "0") setActiveLevel(null);
+      else if (["1", "2", "3", "4"].includes(e.key)) {
+        const L = parseInt(e.key, 10) - 1;
+        if (L < N) setActiveLevel(L);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [N]);
 
   const currentPlayer = game.result ? null : game.turn;
   const disabled = !!game.result || (isAI && game.turn === AI_ID);
@@ -188,6 +256,7 @@ export default function Play() {
           disabled={disabled}
           exploded={exploded}
           resetToken={resetToken}
+          activeLevel={activeLevel}
         />
       </div>
 
@@ -196,6 +265,8 @@ export default function Play() {
         turn={game.turn} isAI={isAI} aiThinking={game.aiThinking}
         difficulty={difficulty} result={game.result}
       />
+
+      <LevelPicker N={N} activeLevel={activeLevel} onChange={setActiveLevel} />
 
       <ControlsPanel
         canUndo={canUndo} exploded={exploded}

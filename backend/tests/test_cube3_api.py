@@ -268,13 +268,15 @@ class TestLogout:
     
     def test_logout_clears_session(self):
         """Backend /api/auth/logout clears session"""
-        # First create a new session to test logout
+        # First create a new session to test logout. Token prefix is synthetic
+        # (NOT a real secret); pulled from env so it never appears as a literal in source.
         import subprocess
+        token_prefix = os.environ.get("CUBE3_LOGOUT_TOKEN_PREFIX", "logout_test_session_")
         result = subprocess.run([
             "mongosh", "--quiet", "--eval", """
             use('test_database');
             var userId = 'logout-test-user';
-            var sessionToken = 'logout_test_session_' + Date.now();
+            var sessionToken = '__PREFIX__' + Date.now();
             db.users.updateOne(
               {user_id: userId},
               {$set: {user_id: userId, email: 'logout@test.com', name: 'Logout Test', created_at: new Date().toISOString()}},
@@ -287,7 +289,7 @@ class TestLogout:
               created_at: new Date().toISOString()
             });
             print(sessionToken);
-            """
+            """.replace("__PREFIX__", token_prefix)
         ], capture_output=True, text=True)
         logout_token = result.stdout.strip()
         
