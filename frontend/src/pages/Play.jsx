@@ -5,8 +5,12 @@ import { cellNotation, PLAYER_COLORS } from "../game/logic";
 import { useGameState } from "../game/useGameState";
 import { useAuth } from "../contexts/AuthContext";
 import { useSound } from "../contexts/SoundContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2, Check, Copy, Layers3 } from "lucide-react";
+import {
+  RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2,
+  Check, Copy, Layers3, Menu, X, ListOrdered,
+} from "lucide-react";
 
 const PLAYER_NAMES = ["Blue", "Red", "Green"];
 const MARK_SYMBOL  = ["╳", "⚫", "▲"];
@@ -24,6 +28,8 @@ function statusForPlayer(active, aiThinking, p) {
   if (aiThinking && p === AI_ID) return "thinking…";
   return "your move";
 }
+
+/* ────────────────────────────── Desktop HUD panels ────────────────────────────── */
 
 function PlayerPanel({ N, mode, numPlayers, turn, isAI, aiThinking, difficulty, result }) {
   return (
@@ -109,65 +115,6 @@ function HistoryPanel({ history, N }) {
   );
 }
 
-function winLabel(result, isAI) {
-  if (isAI) return result.winner === HUMAN_ID ? "Victory" : "Defeat";
-  return `${PLAYER_NAMES[result.winner]} wins`;
-}
-
-function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, setCopied }) {
-  return (
-    <AnimatePresence>
-      {result && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          data-testid="result-overlay"
-        >
-          <motion.div
-            initial={{ scale: 0.88, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
-            transition={{ type: "spring", damping: 18 }}
-            className="glass rounded-2xl p-8 text-center w-[460px] max-w-[92vw] glow-box-lg"
-          >
-            {result.draw ? (
-              <>
-                <div className="font-heading uppercase tracking-[0.3em] text-xs text-slate-400">Result</div>
-                <div className="font-heading font-black uppercase tracking-tighter text-5xl text-white mt-2">Draw</div>
-                <p className="text-slate-400 text-sm mt-3 font-mono">No winning lines remaining.</p>
-              </>
-            ) : (
-              <>
-                <div className="font-heading uppercase tracking-[0.3em] text-xs" style={{ color: PLAYER_COLORS[result.winner] }}>
-                  {MARK_SYMBOL[result.winner]} WINS
-                </div>
-                <div className="font-heading font-black uppercase tracking-tighter text-5xl text-white mt-2 glow-text-lg">
-                  {winLabel(result, isAI)}
-                </div>
-                <p className="text-slate-400 text-sm mt-3 font-mono">in {history.length} moves</p>
-              </>
-            )}
-            <div className="mt-6 flex flex-wrap gap-2 justify-center">
-              <button onClick={onReset} className="btn-primary" data-testid="play-again-btn">Play again</button>
-              <button onClick={onShare} className="btn-ghost inline-flex items-center gap-1.5" data-testid="share-btn">
-                {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Share2 className="w-3.5 h-3.5" /> Share replay</>}
-              </button>
-              <Link to="/lobby" className="btn-ghost">New setup</Link>
-              {user && <Link to="/profile" className="btn-ghost inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" />Stats</Link>}
-            </div>
-            {shareUrl && (
-              <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded border border-[#2B4FFF]/30 bg-[#2B4FFF]/5" data-testid="share-url">
-                <input value={shareUrl} readOnly onClick={(e) => e.target.select()} className="flex-1 bg-transparent font-mono text-[11px] text-[#2B4FFF] outline-none" />
-                <button onClick={() => { navigator.clipboard?.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="text-slate-300 hover:text-[#2B4FFF] transition" data-testid="copy-url-btn" aria-label="Copy">
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
 function LevelPicker({ N, activeLevel, onChange }) {
   const levels = Array.from({ length: N }, (_, i) => i);
   return (
@@ -209,11 +156,228 @@ function LevelPicker({ N, activeLevel, onChange }) {
   );
 }
 
+/* ────────────────────────────── Mobile HUD ────────────────────────────── */
+
+function MobileTopBar({ numPlayers, turn, isAI, aiThinking, difficulty, result, onOpenMenu }) {
+  return (
+    <div
+      className="absolute top-0 inset-x-0 z-30 glass safe-pt safe-pl safe-pr px-3 py-2 flex items-center gap-3 border-b border-[#2B4FFF]/10"
+      data-testid="mobile-top-bar"
+    >
+      <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto hide-scrollbar">
+        {Array.from({ length: numPlayers }).map((_, p) => {
+          const active = !result && turn === p;
+          const name = isAI && p === AI_ID ? `AI·${difficulty}` : PLAYER_NAMES[p];
+          return (
+            <div
+              key={`mp-${p}`}
+              data-testid={`mobile-player-${p}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all flex-shrink-0 ${
+                active ? "border-[#2B4FFF] bg-[#2B4FFF]/10" : "border-[#2B4FFF]/10"
+              }`}
+            >
+              <span
+                className="font-hud text-sm"
+                style={{ color: PLAYER_COLORS[p], textShadow: `0 0 8px ${PLAYER_COLORS[p]}` }}
+              >
+                {MARK_SYMBOL[p]}
+              </span>
+              <span className="font-heading uppercase text-[10px] tracking-wider text-white">{name}</span>
+              {active && aiThinking && p === AI_ID && (
+                <span className="font-mono text-[9px] text-slate-400">…</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <button
+        onClick={onOpenMenu}
+        className="tap-target rounded border border-[#2B4FFF]/30 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center"
+        data-testid="mobile-menu-btn"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+    </div>
+  );
+}
+
+function MobileBottomBar({ N, activeLevel, setActiveLevel, canUndo, onUndo, onResetView, onShowHistory, historyCount }) {
+  const levels = Array.from({ length: N }, (_, i) => i);
+  return (
+    <div
+      className="absolute inset-x-0 z-30 glass safe-pl safe-pr border-t border-[#2B4FFF]/10"
+      style={{ bottom: "calc(72px + env(safe-area-inset-bottom))" }}
+      data-testid="mobile-bottom-bar"
+    >
+      {/* Horizontal level chips */}
+      <div className="px-3 pt-2 pb-1 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+        <span className="text-[9px] tracking-[0.25em] uppercase text-[#2B4FFF] flex-shrink-0 mr-1">Level</span>
+        <button
+          onClick={() => setActiveLevel(null)}
+          data-testid="m-level-all-btn"
+          className={`tap-target px-3 rounded text-[11px] font-heading uppercase tracking-wider flex-shrink-0 transition-all ${
+            activeLevel === null ? "text-[#2B4FFF] border border-[#2B4FFF]/60 bg-[#2B4FFF]/10" : "text-slate-300 border border-[#2B4FFF]/20"
+          }`}
+        >
+          All
+        </button>
+        {levels.map((L) => (
+          <button
+            key={`ml-${L}`}
+            onClick={() => setActiveLevel(L)}
+            data-testid={`m-level-${L}-btn`}
+            className={`tap-target px-3 rounded text-[11px] font-heading uppercase tracking-wider flex-shrink-0 transition-all ${
+              activeLevel === L ? "text-[#2B4FFF] border border-[#2B4FFF]/60 bg-[#2B4FFF]/10" : "text-slate-300 border border-[#2B4FFF]/20"
+            }`}
+          >
+            L{L + 1}
+          </button>
+        ))}
+      </div>
+
+      {/* Action row */}
+      <div className="px-3 pb-2 pt-1 flex items-center gap-2">
+        <button
+          onClick={onResetView}
+          className="tap-target flex-1 rounded border border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center gap-1.5 text-[11px] font-heading uppercase tracking-wider"
+          data-testid="m-reset-view-btn"
+        >
+          <RotateCcw className="w-4 h-4" /> View
+        </button>
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className={`tap-target flex-1 rounded border transition flex items-center justify-center gap-1.5 text-[11px] font-heading uppercase tracking-wider ${
+            canUndo
+              ? "border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF]"
+              : "border-slate-800 text-slate-600 opacity-50"
+          }`}
+          data-testid="m-undo-btn"
+        >
+          <Undo2 className="w-4 h-4" /> Undo
+        </button>
+        <button
+          onClick={onShowHistory}
+          className="tap-target flex-1 rounded border border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center gap-1.5 text-[11px] font-heading uppercase tracking-wider relative"
+          data-testid="m-history-btn"
+        >
+          <ListOrdered className="w-4 h-4" /> Log
+          {historyCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-[#2B4FFF] text-white text-[9px] font-mono rounded-full w-4 h-4 flex items-center justify-center">
+              {historyCount}
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MobileSheet({ open, onClose, title, children }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="absolute inset-0 z-40 flex items-end bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+          data-testid="mobile-sheet-backdrop"
+        >
+          <motion.div
+            initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full glass rounded-t-2xl safe-pb border-t border-[#2B4FFF]/30 max-h-[75vh] flex flex-col"
+            data-testid="mobile-sheet"
+          >
+            <div className="flex items-center justify-between px-4 pt-3 pb-2">
+              <div className="text-[10px] tracking-[0.3em] uppercase text-[#2B4FFF]">{title}</div>
+              <button
+                onClick={onClose}
+                className="tap-target rounded text-slate-300 hover:text-[#2B4FFF] transition flex items-center justify-center"
+                data-testid="mobile-sheet-close"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-4 pb-4 overflow-y-auto hide-scrollbar flex-1">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ────────────────────────────── Shared: Result overlay ────────────────────────────── */
+
+function winLabel(result, isAI) {
+  if (isAI) return result.winner === HUMAN_ID ? "Victory" : "Defeat";
+  return `${PLAYER_NAMES[result.winner]} wins`;
+}
+
+function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, setCopied }) {
+  return (
+    <AnimatePresence>
+      {result && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          data-testid="result-overlay"
+        >
+          <motion.div
+            initial={{ scale: 0.88, y: 16, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+            transition={{ type: "spring", damping: 18 }}
+            className="glass rounded-2xl p-6 sm:p-8 text-center w-full max-w-[460px] glow-box-lg"
+          >
+            {result.draw ? (
+              <>
+                <div className="font-heading uppercase tracking-[0.3em] text-xs text-slate-400">Result</div>
+                <div className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl text-white mt-2">Draw</div>
+                <p className="text-slate-400 text-sm mt-3 font-mono">No winning lines remaining.</p>
+              </>
+            ) : (
+              <>
+                <div className="font-heading uppercase tracking-[0.3em] text-xs" style={{ color: PLAYER_COLORS[result.winner] }}>
+                  {MARK_SYMBOL[result.winner]} WINS
+                </div>
+                <div className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl text-white mt-2 glow-text-lg">
+                  {winLabel(result, isAI)}
+                </div>
+                <p className="text-slate-400 text-sm mt-3 font-mono">in {history.length} moves</p>
+              </>
+            )}
+            <div className="mt-6 flex flex-wrap gap-2 justify-center">
+              <button onClick={onReset} className="btn-primary" data-testid="play-again-btn">Play again</button>
+              <button onClick={onShare} className="btn-ghost inline-flex items-center gap-1.5" data-testid="share-btn">
+                {copied ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Share2 className="w-3.5 h-3.5" /> Share replay</>}
+              </button>
+              <Link to="/lobby" className="btn-ghost">New setup</Link>
+              {user && <Link to="/profile" className="btn-ghost inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" />Stats</Link>}
+            </div>
+            {shareUrl && (
+              <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded border border-[#2B4FFF]/30 bg-[#2B4FFF]/5" data-testid="share-url">
+                <input value={shareUrl} readOnly onClick={(e) => e.target.select()} className="flex-1 bg-transparent font-mono text-[11px] text-[#2B4FFF] outline-none" />
+                <button onClick={() => { navigator.clipboard?.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="tap-target text-slate-300 hover:text-[#2B4FFF] transition flex items-center justify-center" data-testid="copy-url-btn" aria-label="Copy">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ────────────────────────────── Page ────────────────────────────── */
 
 export default function Play() {
   const [params] = useSearchParams();
   const { user } = useAuth();
   const sound = useSound();
+  const isMobile = useIsMobile();
 
   const size = parseInt(params.get("size") || "3", 10);
   const mode = params.get("mode") || "local_2p";
@@ -222,9 +386,10 @@ export default function Play() {
   const N = size === 4 ? 4 : 3;
 
   const game = useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound });
-  const [exploded, setExploded]         = useState(false);
-  const [resetToken, setResetToken]     = useState(0);
-  const [activeLevel, setActiveLevel]   = useState(null);
+  const [exploded, setExploded]       = useState(false);
+  const [resetToken, setResetToken]   = useState(0);
+  const [activeLevel, setActiveLevel] = useState(null);
+  const [sheet, setSheet]             = useState(null); // "menu" | "history" | null
 
   // Keyboard shortcuts: 0 = All levels · 1-4 = lock to that level
   useEffect(() => {
@@ -243,10 +408,12 @@ export default function Play() {
   const currentPlayer = game.result ? null : game.turn;
   const disabled = !!game.result || (isAI && game.turn === AI_ID);
   const canUndo  = !isAI && !game.result && game.history.length > 0;
+  const onResetView = () => setResetToken((t) => t + 1);
+  const onNewGame   = () => { game.reset(); setResetToken((t) => t + 1); setSheet(null); };
 
   return (
-    <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden" data-testid="play-screen">
-      <div className="absolute inset-0">
+    <div className="relative h-[calc(100vh-3.5rem)] overflow-hidden no-select" data-testid="play-screen">
+      <div className="absolute inset-0 touch-none">
         <Board3D
           N={N}
           board={game.board}
@@ -260,31 +427,89 @@ export default function Play() {
         />
       </div>
 
-      <PlayerPanel
-        N={N} mode={mode} numPlayers={numPlayers}
-        turn={game.turn} isAI={isAI} aiThinking={game.aiThinking}
-        difficulty={difficulty} result={game.result}
-      />
+      {/* Desktop HUD */}
+      {!isMobile && (
+        <>
+          <PlayerPanel
+            N={N} mode={mode} numPlayers={numPlayers}
+            turn={game.turn} isAI={isAI} aiThinking={game.aiThinking}
+            difficulty={difficulty} result={game.result}
+          />
+          <LevelPicker N={N} activeLevel={activeLevel} onChange={setActiveLevel} />
+          <ControlsPanel
+            canUndo={canUndo} exploded={exploded}
+            onResetView={onResetView}
+            onToggleExplode={() => setExploded((x) => !x)}
+            onUndo={game.undo}
+            onReset={onNewGame}
+          />
+          <HistoryPanel history={game.history} N={N} />
+          {!game.result && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-5 py-2 flex items-center gap-3" data-testid="turn-indicator">
+              <span className="font-hud text-xl" style={{ color: PLAYER_COLORS[game.turn], textShadow: `0 0 12px ${PLAYER_COLORS[game.turn]}` }}>{MARK_SYMBOL[game.turn]}</span>
+              <span className="font-heading uppercase tracking-[0.2em] text-xs text-white">
+                {isAI && game.turn === AI_ID ? `AI thinking` : (isAI ? "Your turn" : `${PLAYER_NAMES[game.turn]}'s turn`)}
+              </span>
+            </div>
+          )}
+        </>
+      )}
 
-      <LevelPicker N={N} activeLevel={activeLevel} onChange={setActiveLevel} />
+      {/* Mobile HUD */}
+      {isMobile && (
+        <>
+          <MobileTopBar
+            numPlayers={numPlayers} turn={game.turn} isAI={isAI}
+            aiThinking={game.aiThinking} difficulty={difficulty} result={game.result}
+            onOpenMenu={() => setSheet("menu")}
+          />
+          <MobileBottomBar
+            N={N}
+            activeLevel={activeLevel}
+            setActiveLevel={setActiveLevel}
+            canUndo={canUndo}
+            onUndo={game.undo}
+            onResetView={onResetView}
+            onShowHistory={() => setSheet("history")}
+            historyCount={game.history.length}
+          />
 
-      <ControlsPanel
-        canUndo={canUndo} exploded={exploded}
-        onResetView={() => setResetToken((t) => t + 1)}
-        onToggleExplode={() => setExploded((x) => !x)}
-        onUndo={game.undo}
-        onReset={() => { game.reset(); setResetToken((t) => t + 1); }}
-      />
+          <MobileSheet open={sheet === "menu"} onClose={() => setSheet(null)} title="Menu">
+            <div className="space-y-2 font-mono text-xs text-slate-300">
+              <div className="text-slate-500">{N}×{N}×{N} · {mode.replace("_", " ")}</div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button onClick={() => { setExploded((x) => !x); setSheet(null); }} className={`tap-target rounded border transition flex items-center justify-center gap-2 text-xs font-heading uppercase tracking-wider ${exploded ? "text-[#2B4FFF] border-[#2B4FFF]/60 bg-[#2B4FFF]/10" : "text-slate-200 border-[#2B4FFF]/20"}`} data-testid="m-explode-toggle-btn">
+                <Layers className="w-4 h-4" /> {exploded ? "Collapse" : "Exploded"}
+              </button>
+              <button onClick={onNewGame} className="tap-target rounded border border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center gap-2 text-xs font-heading uppercase tracking-wider" data-testid="m-new-game-btn">
+                <RefreshCw className="w-4 h-4" /> New Game
+              </button>
+              <Link to="/lobby" className="tap-target rounded border border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center gap-2 text-xs font-heading uppercase tracking-wider" data-testid="m-back-lobby-btn">
+                <Home className="w-4 h-4" /> Lobby
+              </Link>
+              <Link to="/leaderboard" className="tap-target rounded border border-[#2B4FFF]/20 text-slate-200 hover:text-[#2B4FFF] transition flex items-center justify-center gap-2 text-xs font-heading uppercase tracking-wider">
+                <Trophy className="w-4 h-4" /> Leaderboard
+              </Link>
+            </div>
+          </MobileSheet>
 
-      <HistoryPanel history={game.history} N={N} />
-
-      {!game.result && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-5 py-2 flex items-center gap-3" data-testid="turn-indicator">
-          <span className="font-hud text-xl" style={{ color: PLAYER_COLORS[game.turn], textShadow: `0 0 12px ${PLAYER_COLORS[game.turn]}` }}>{MARK_SYMBOL[game.turn]}</span>
-          <span className="font-heading uppercase tracking-[0.2em] text-xs text-white">
-            {isAI && game.turn === AI_ID ? `AI thinking` : (isAI ? "Your turn" : `${PLAYER_NAMES[game.turn]}'s turn`)}
-          </span>
-        </div>
+          <MobileSheet open={sheet === "history"} onClose={() => setSheet(null)} title={`Move Log · ${game.history.length}`}>
+            {game.history.length === 0 && <div className="text-xs text-slate-500 font-mono py-4 text-center">No moves yet.</div>}
+            <div className="space-y-1">
+              {game.history.map((m, i) => {
+                const notation = cellNotation(N, m.flat);
+                return (
+                  <div key={`mhist-${i}-${m.flat}`} className="flex items-center justify-between text-xs font-mono px-2 py-1.5 rounded border border-[#2B4FFF]/10" data-testid={`m-move-${i}`}>
+                    <span className="text-slate-500">#{i + 1}</span>
+                    <span className="font-hud text-base" style={{ color: PLAYER_COLORS[m.player] }}>{MARK_SYMBOL[m.player]}</span>
+                    <span className="text-slate-300">{notation.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </MobileSheet>
+        </>
       )}
 
       <ResultOverlay

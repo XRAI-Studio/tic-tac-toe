@@ -220,28 +220,6 @@ function CameraReset({ token }) {
   return null;
 }
 
-/**
- * Adapts camera position & FOV for portrait-phone viewports so the cube fills the frame.
- * Pulls the camera back + widens FOV on tall/narrow screens.
- */
-function ResponsiveCamera({ N }) {
-  const { size, camera } = useThree();
-  useEffect(() => {
-    const aspect = size.width / size.height;
-    const isPortrait = aspect < 1;
-    const isTinyPortrait = aspect < 0.6;
-
-    // 3x3x3 base ≈ 8 units wide · 4x4x4 ≈ 10 units wide
-    const scale = N === 4 ? 1.25 : 1;
-    const dist = isTinyPortrait ? 11 * scale : isPortrait ? 9 * scale : 7.5 * scale;
-    camera.position.set(dist * 0.75, dist * 0.6, dist * 0.9);
-    camera.fov = isTinyPortrait ? 58 : isPortrait ? 50 : 42;
-    camera.updateProjectionMatrix();
-    camera.lookAt(0, 0, 0);
-  }, [size.width, size.height, N, camera]);
-  return null;
-}
-
 export default function Board3D({
   N,
   board,
@@ -257,12 +235,10 @@ export default function Board3D({
     <Canvas
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true }}
-      style={{ width: "100%", height: "100%", background: "transparent", touchAction: "none" }}
-      className="no-select"
+      style={{ width: "100%", height: "100%", background: "transparent" }}
       data-testid="board-canvas"
     >
       <PerspectiveCamera makeDefault position={[6, 5, 7]} fov={42} />
-      <ResponsiveCamera N={N} />
       <ambientLight intensity={0.35} />
       <pointLight position={[10, 10, 10]} intensity={1.2} color="#2B4FFF" />
       <pointLight position={[-10, -6, -10]} intensity={0.8} color="#1E40FF" />

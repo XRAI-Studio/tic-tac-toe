@@ -48,7 +48,7 @@ export default function Lobby() {
 
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] scanline">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="text-[#2B4FFF] text-xs uppercase tracking-[0.4em] font-heading mb-2">New Game</div>
           <h1 className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl lg:text-6xl text-white glow-text-lg">
@@ -61,20 +61,20 @@ export default function Lobby() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 glass rounded-lg p-4 sm:p-5 border-[#2B4FFF]/50 flex flex-wrap items-center gap-3 sm:gap-4 glow-box"
+            className="mt-6 glass rounded-lg p-5 border-[#2B4FFF]/50 flex items-center gap-4 glow-box"
             data-testid="resume-banner"
           >
-            <div className="w-11 h-11 rounded border border-[#2B4FFF] text-[#2B4FFF] flex items-center justify-center flex-shrink-0">
+            <div className="w-11 h-11 rounded border border-[#2B4FFF] text-[#2B4FFF] flex items-center justify-center">
               <PlayIcon className="w-5 h-5" />
             </div>
-            <div className="flex-1 min-w-[160px]">
+            <div className="flex-1">
               <div className="font-heading uppercase tracking-wider text-white text-sm">Unfinished match</div>
               <div className="font-mono text-xs text-slate-400 mt-0.5">
                 {saved.board_size}×{saved.board_size}×{saved.board_size} · {saved.mode?.replace("_", " ")} · {(saved.moves || []).length} moves in
               </div>
             </div>
             <button onClick={resume} className="btn-primary" data-testid="resume-btn">Resume</button>
-            <button onClick={discardSaved} className="tap-target text-slate-500 hover:text-white transition flex items-center justify-center" data-testid="discard-saved-btn" aria-label="Discard">
+            <button onClick={discardSaved} className="text-slate-500 hover:text-white transition" data-testid="discard-saved-btn" aria-label="Discard">
               <XIcon className="w-4 h-4" />
             </button>
           </motion.div>
