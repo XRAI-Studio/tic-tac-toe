@@ -318,12 +318,22 @@ function winLabel(result, isAI) {
   return `${PLAYER_NAMES[result.winner]} wins`;
 }
 
+/** Result-overlay share button label: prefers "Shared!" → "Copied!" → CTA. */
+function shareButtonLabel(shared, copied) {
+  if (shared) return <><Check className="w-3.5 h-3.5" /> Shared!</>;
+  if (copied) return <><Check className="w-3.5 h-3.5" /> Copied!</>;
+  return <><Share2 className="w-3.5 h-3.5" /> Share replay</>;
+}
+
+/** Bottom turn-indicator copy: AI thinking, your turn (vs AI), or named player turn (local). */
+function turnIndicatorText(isAI, turn) {
+  if (isAI && turn === AI_ID) return "AI thinking";
+  if (isAI) return "Your turn";
+  return `${PLAYER_NAMES[turn]}'s turn`;
+}
+
 function ResultOverlay({ result, isAI, history, user, onReset, onShare, shareUrl, copied, shared, setCopied }) {
-  const shareLabel = shared
-    ? <><Check className="w-3.5 h-3.5" /> Shared!</>
-    : copied
-      ? <><Check className="w-3.5 h-3.5" /> Copied!</>
-      : <><Share2 className="w-3.5 h-3.5" /> Share replay</>;
+  const shareLabel = shareButtonLabel(shared, copied);
   return (
     <AnimatePresence>
       {result && (
@@ -500,7 +510,7 @@ function PlayInner({ N, mode, isAI, difficulty, numPlayers, user, resume, sound,
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 glass rounded-full px-5 py-2 flex items-center gap-3" data-testid="turn-indicator">
               <span className="font-hud text-xl" style={{ color: PLAYER_COLORS[game.turn], textShadow: `0 0 12px ${PLAYER_COLORS[game.turn]}` }}>{MARK_SYMBOL[game.turn]}</span>
               <span className="font-heading uppercase tracking-[0.2em] text-xs text-white">
-                {isAI && game.turn === AI_ID ? `AI thinking` : (isAI ? "Your turn" : `${PLAYER_NAMES[game.turn]}'s turn`)}
+                {turnIndicatorText(isAI, game.turn)}
               </span>
             </div>
           )}

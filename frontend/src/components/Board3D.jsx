@@ -251,6 +251,15 @@ function CameraReset({ token }) {
   return null;
 }
 
+/** Returns viewport-aware camera distance + FOV for the current aspect ratio.
+ *  Tiny portrait (very narrow phones) gets the widest framing; landscape desktop the tightest. */
+function pickCameraFraming(aspect, N) {
+  const scale = N === 4 ? 1.25 : 1;
+  if (aspect < 0.6) return { dist: 11 * scale, fov: 58 };  // tiny portrait
+  if (aspect < 1)   return { dist:  9 * scale, fov: 50 };  // portrait
+  return { dist: 7.5 * scale, fov: 42 };                   // landscape / desktop
+}
+
 /**
  * Adapts camera position & FOV for portrait-phone viewports so the cube fills the frame.
  * Pulls the camera back + widens FOV on tall/narrow screens.
@@ -258,15 +267,9 @@ function CameraReset({ token }) {
 function ResponsiveCamera({ N }) {
   const { size, camera } = useThree();
   useEffect(() => {
-    const aspect = size.width / size.height;
-    const isPortrait = aspect < 1;
-    const isTinyPortrait = aspect < 0.6;
-
-    // 3x3x3 base ≈ 8 units wide · 4x4x4 ≈ 10 units wide
-    const scale = N === 4 ? 1.25 : 1;
-    const dist = isTinyPortrait ? 11 * scale : isPortrait ? 9 * scale : 7.5 * scale;
+    const { dist, fov } = pickCameraFraming(size.width / size.height, N);
     camera.position.set(dist * 0.75, dist * 0.6, dist * 0.9);
-    camera.fov = isTinyPortrait ? 58 : isPortrait ? 50 : 42;
+    camera.fov = fov;
     camera.updateProjectionMatrix();
     camera.lookAt(0, 0, 0);
   }, [size.width, size.height, N, camera]);
