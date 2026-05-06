@@ -8,22 +8,34 @@ import { PLAYER_COLORS } from "../game/logic";
 
 const PLAYER_NAMES = ["Blue", "Red", "Green"];
 
+/** Wordle-style scoring badge: ⭐⭐⭐ for "well under par", ⭐⭐ for ≤par, ⭐ for over par. */
+function starsForScore(moves, par) {
+  if (moves <= par - 2) return "⭐⭐⭐";
+  if (moves <= par)     return "⭐⭐";
+  return "⭐";
+}
+
+/** Map a player id (0/1/2) to its Wordle-emoji square; null cells are dark. */
+function emojiCell(value) {
+  if (value === 0) return "🟦";
+  if (value === 1) return "🟥";
+  if (value === 2) return "🟩";
+  return "⬛";
+}
+
 /** Builds a Wordle-style emoji result string for sharing.
  *  Score line + a 3×3 grid summary of the board's center level (most representative). */
 function buildEmojiResult({ dayNumber, moves, won, par, board }) {
   const verdict = won ? `${moves}/${par}` : "X/9";
-  const stars = won
-    ? (moves <= par - 2 ? "⭐⭐⭐" : moves <= par ? "⭐⭐" : "⭐")
-    : "";
+  const stars = won ? starsForScore(moves, par) : "";
   const lines = [`Cube3 #${dayNumber} — ${verdict} ${stars}`.trimEnd()];
 
   // Render the middle level (L2) as a 3-line emoji grid (most central / informative).
   const N = 3;
   const midOffset = N * N; // L2 starts at index 9 in flat 0..26
-  const cell = (v) => (v === 0 ? "🟦" : v === 1 ? "🟥" : v === 2 ? "🟩" : "⬛");
   for (let r = 0; r < N; r++) {
     let row = "";
-    for (let c = 0; c < N; c++) row += cell(board[midOffset + r * N + c]);
+    for (let c = 0; c < N; c++) row += emojiCell(board[midOffset + r * N + c]);
     lines.push(row);
   }
   lines.push(`https://spatial-marks.preview.emergentagent.com/daily`);
@@ -37,6 +49,13 @@ function StatPill({ label, value, accent }) {
       <div className={`mt-1 font-hud text-2xl ${accent ? "text-[#2B4FFF] glow-text" : "text-white"}`}>{value}</div>
     </div>
   );
+}
+
+/** Share-button label: shows the most recent positive feedback, otherwise the call-to-action. */
+function renderShareLabel(shared, copied) {
+  if (shared) return <><Check className="w-4 h-4" /> Shared!</>;
+  if (copied) return <><Check className="w-4 h-4" /> Copied!</>;
+  return <><Share2 className="w-4 h-4" /> Share result</>;
 }
 
 export default function Daily() {
@@ -87,7 +106,9 @@ export default function Daily() {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {/* clipboard blocked — silent */}
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") console.debug("[daily] clipboard blocked:", err?.message);
+    }
   };
 
   if (!config) return <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center text-slate-500 font-mono">Loading today's cube…</div>;
@@ -132,9 +153,7 @@ export default function Daily() {
                 </div>
               </div>
               <button onClick={shareResult} className="btn-ghost inline-flex items-center gap-2" data-testid="daily-share-btn">
-                {shared ? <><Check className="w-4 h-4" /> Shared!</>
-                  : copied ? <><Check className="w-4 h-4" /> Copied!</>
-                  : <><Share2 className="w-4 h-4" /> Share result</>}
+                {renderShareLabel(shared, copied)}
               </button>
             </>
           )}

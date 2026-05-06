@@ -149,7 +149,7 @@ class TestSavedGamesE2E:
         }
         r = session.post(f"{API}/games/saved", json=payload, headers=h)
         assert r.status_code == 200
-        assert r.json().get("ok") is True
+        assert r.json().get("ok") == True
 
         # GET — should return the saved doc
         r = session.get(f"{API}/games/saved", headers=h)
@@ -164,7 +164,7 @@ class TestSavedGamesE2E:
         # DELETE
         r = session.delete(f"{API}/games/saved", headers=h)
         assert r.status_code == 200
-        assert r.json().get("ok") is True
+        assert r.json().get("ok") == True
 
         # GET — should return null
         r = session.get(f"{API}/games/saved", headers=h)

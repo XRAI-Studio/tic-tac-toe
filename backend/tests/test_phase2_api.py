@@ -69,7 +69,7 @@ class TestSavedGamesEndpoints:
         response = requests.post(f"{BASE_URL}/api/games/saved", json=payload, headers=headers)
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") is True
+        assert data.get("ok") == True
         print("✓ POST /api/games/saved with token saves game")
     
     def test_get_saved_game_returns_doc_when_exists(self):
@@ -155,7 +155,7 @@ class TestSavedGamesEndpoints:
         response = requests.delete(f"{BASE_URL}/api/games/saved", headers=headers)
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") is True
+        assert data.get("ok") == True
         
         # Verify it's gone
         response = requests.get(f"{BASE_URL}/api/games/saved", headers=headers)

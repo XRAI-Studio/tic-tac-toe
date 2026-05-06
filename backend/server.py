@@ -343,91 +343,122 @@ def _outcome_label(replay: dict) -> str:
     return f"{name} wins"
 
 
-def _build_og_svg(replay: dict) -> str:
-    """Render a 1200×630 OG card showing the final board state + outcome."""
+def _replay_to_board(replay: dict) -> tuple[int, list]:
+    """Replay all moves into a flat board array; returns (N, board)."""
     N = int(replay.get("board_size", 3))
-    moves = replay.get("moves") or []
+    board = [None] * (N * N * N)
+    for m in replay.get("moves") or []:
+        flat = m.get("flat")
+        if flat is not None and 0 <= flat < len(board):
+            board[flat] = m.get("player")
+    return N, board
+
+
+def _outcome_accent(replay: dict) -> str:
+    """Hex color for the outcome banner — winner's hue, neutral on draw, blue otherwise."""
+    if replay.get("result") == "draw":
+        return "#94A3B8"
     winner = replay.get("winner")
-    is_draw = replay.get("result") == "draw"
+    if winner is not None and 0 <= winner < len(PLAYER_HEX):
+        return PLAYER_HEX[winner]
+    return "#2B4FFF"
+
+
+def _svg_header(N: int, moves_count: int, outcome: str, accent: str, player_name: str) -> str:
+    """Background gradient + brand header + outcome banner — top 130px of the card."""
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">'
+        '<defs>'
+        '<radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">'
+        '<stop offset="0%" stop-color="#0A1A4F" stop-opacity="0.6"/>'
+        '<stop offset="100%" stop-color="#000000" stop-opacity="0"/>'
+        '</radialGradient>'
+        '</defs>'
+        '<rect width="1200" height="630" fill="#000000"/>'
+        '<rect width="1200" height="630" fill="url(#bgGrad)"/>'
+        # Brand (left)
+        '<text x="60" y="80" font-family="Inter, sans-serif" font-weight="900" font-size="44" '
+        'fill="#ffffff" letter-spacing="6">CUBE<tspan fill="#2B4FFF">3</tspan></text>'
+        f'<text x="60" y="115" font-family="Inter, sans-serif" font-weight="600" font-size="20" '
+        f'fill="#94A3B8" letter-spacing="3">{N}×{N}×{N} · {moves_count} moves</text>'
+        # Outcome (right)
+        f'<text x="1140" y="80" text-anchor="end" font-family="Inter, sans-serif" font-weight="900" '
+        f'font-size="44" fill="{accent}">{outcome}</text>'
+        f'<text x="1140" y="115" text-anchor="end" font-family="Inter, sans-serif" font-weight="500" '
+        f'font-size="20" fill="#94A3B8">by {player_name}</text>'
+    )
+
+
+def _svg_mark(value: int, midx: float, midy: float, sz: float) -> str:
+    """Player-specific glyph: X (0), O (1), triangle (2)."""
+    color = PLAYER_HEX[value]
+    if value == 0:
+        return (
+            f'<line x1="{midx - sz}" y1="{midy - sz}" x2="{midx + sz}" y2="{midy + sz}" '
+            f'stroke="{color}" stroke-width="6" stroke-linecap="round"/>'
+            f'<line x1="{midx + sz}" y1="{midy - sz}" x2="{midx - sz}" y2="{midy + sz}" '
+            f'stroke="{color}" stroke-width="6" stroke-linecap="round"/>'
+        )
+    if value == 1:
+        return f'<circle cx="{midx}" cy="{midy}" r="{sz}" fill="none" stroke="{color}" stroke-width="6"/>'
+    h = sz * 1.05
+    return (
+        f'<polygon points="{midx},{midy - h} {midx + sz},{midy + h * 0.7} {midx - sz},{midy + h * 0.7}" '
+        f'fill="none" stroke="{color}" stroke-width="6" stroke-linejoin="round"/>'
+    )
+
+
+def _svg_level_grid(L: int, gx: float, grid_y: float, grid_w: float, cell_size: float, N: int, board: list) -> str:
+    """One level's N×N cell grid + L-label, rendered at the given x offset."""
+    parts = [
+        f'<text x="{gx + grid_w / 2}" y="{grid_y - 14}" text-anchor="middle" '
+        f'font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#2B4FFF" '
+        f'letter-spacing="3">L{L + 1}</text>'
+    ]
+    for r in range(N):
+        for c in range(N):
+            fi = L * N * N + r * N + c
+            cx = gx + c * cell_size
+            cy = grid_y + r * cell_size
+            v = board[fi]
+            fill = "#0A1428" if v is None else PLAYER_HEX[v] + "20"
+            stroke = "#2B4FFF40" if v is None else PLAYER_HEX[v]
+            parts.append(
+                f'<rect x="{cx + 4}" y="{cy + 4}" width="{cell_size - 8}" height="{cell_size - 8}" '
+                f'rx="6" fill="{fill}" stroke="{stroke}" stroke-width="2"/>'
+            )
+            if v is not None:
+                parts.append(_svg_mark(v, cx + cell_size / 2, cy + cell_size / 2, cell_size * 0.32))
+    return "".join(parts)
+
+
+def _build_og_svg(replay: dict) -> str:
+    """Render a 1200×630 OG card showing the final board state + outcome.
+    Composed from focused helpers for testability and clarity."""
+    N, board = _replay_to_board(replay)
+    moves_count = len(replay.get("moves") or [])
+    outcome = _outcome_label(replay)
+    accent = _outcome_accent(replay)
     player_name = replay.get("player_name") or "Guest"
 
-    # Replay the moves into a flat board.
-    board = [None] * (N * N * N)
-    for m in moves:
-        flat = m.get("flat")
-        p = m.get("player")
-        if flat is not None and 0 <= flat < len(board):
-            board[flat] = p
-
-    # Layout: stacked level grids, side by side. Each cell rendered with its mark.
+    # Layout math: stacked level grids, side by side.
     pad = 60
     title_h = 130
     avail_w = 1200 - 2 * pad
     avail_h = 630 - title_h - pad - 60
-    # cell size based on N (3 levels of N×N grids per row)
-    grid_w = (avail_w - 60 * (N - 1)) / N      # gap between levels
+    grid_w = (avail_w - 60 * (N - 1)) / N
     cell_size = grid_w / N
     grids_h = cell_size * N
     grid_y = title_h + (avail_h - grids_h) / 2 + 20
 
-    parts = []
-    parts.append('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">')
-    # Background
-    parts.append('<rect width="1200" height="630" fill="#000000"/>')
-    parts.append('<rect width="1200" height="630" fill="url(#bgGrad)"/>')
-    parts.append('<defs>')
-    parts.append('<radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">')
-    parts.append('<stop offset="0%" stop-color="#0A1A4F" stop-opacity="0.6"/>')
-    parts.append('<stop offset="100%" stop-color="#000000" stop-opacity="0"/>')
-    parts.append('</radialGradient>')
-    parts.append('</defs>')
-
-    # Header brand
-    parts.append('<text x="60" y="80" font-family="Inter, sans-serif" font-weight="900" font-size="44" fill="#ffffff" letter-spacing="6">CUBE<tspan fill="#2B4FFF">3</tspan></text>')
-    parts.append(f'<text x="60" y="115" font-family="Inter, sans-serif" font-weight="600" font-size="20" fill="#94A3B8" letter-spacing="3">{N}×{N}×{N} · {len(moves)} moves</text>')
-
-    # Outcome banner (right side)
-    outcome = _outcome_label(replay)
-    accent = "#FFD700" if not is_draw and winner is not None else "#2B4FFF"
-    if is_draw:
-        accent = "#94A3B8"
-    elif winner is not None and 0 <= winner < len(PLAYER_HEX):
-        accent = PLAYER_HEX[winner]
-    parts.append(f'<text x="1140" y="80" text-anchor="end" font-family="Inter, sans-serif" font-weight="900" font-size="44" fill="{accent}">{outcome}</text>')
-    parts.append(f'<text x="1140" y="115" text-anchor="end" font-family="Inter, sans-serif" font-weight="500" font-size="20" fill="#94A3B8">by {player_name}</text>')
-
-    # Render each level grid
+    parts = [_svg_header(N, moves_count, outcome, accent, player_name)]
     for L in range(N):
-        gx = pad + L * (grid_w + 60)
-        # Level label
-        parts.append(f'<text x="{gx + grid_w / 2}" y="{grid_y - 14}" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#2B4FFF" letter-spacing="3">L{L + 1}</text>')
-        for r in range(N):
-            for c in range(N):
-                fi = L * N * N + r * N + c
-                cx = gx + c * cell_size
-                cy = grid_y + r * cell_size
-                v = board[fi]
-                # Cell background
-                fill = "#0A1428" if v is None else PLAYER_HEX[v] + "20"
-                stroke = "#2B4FFF40" if v is None else PLAYER_HEX[v]
-                parts.append(f'<rect x="{cx + 4}" y="{cy + 4}" width="{cell_size - 8}" height="{cell_size - 8}" rx="6" fill="{fill}" stroke="{stroke}" stroke-width="2"/>')
-                if v is not None:
-                    color = PLAYER_HEX[v]
-                    midx = cx + cell_size / 2
-                    midy = cy + cell_size / 2
-                    sz = cell_size * 0.32
-                    if v == 0:  # X
-                        parts.append(f'<line x1="{midx - sz}" y1="{midy - sz}" x2="{midx + sz}" y2="{midy + sz}" stroke="{color}" stroke-width="6" stroke-linecap="round"/>')
-                        parts.append(f'<line x1="{midx + sz}" y1="{midy - sz}" x2="{midx - sz}" y2="{midy + sz}" stroke="{color}" stroke-width="6" stroke-linecap="round"/>')
-                    elif v == 1:  # O
-                        parts.append(f'<circle cx="{midx}" cy="{midy}" r="{sz}" fill="none" stroke="{color}" stroke-width="6"/>')
-                    else:  # Triangle
-                        h = sz * 1.05
-                        parts.append(f'<polygon points="{midx},{midy - h} {midx + sz},{midy + h * 0.7} {midx - sz},{midy + h * 0.7}" fill="none" stroke="{color}" stroke-width="6" stroke-linejoin="round"/>')
-
-    # Footer
-    parts.append('<text x="600" y="600" text-anchor="middle" font-family="Inter, sans-serif" font-weight="500" font-size="18" fill="#475569">3D Tic-Tac-Toe · play.cube3</text>')
-    parts.append('</svg>')
+        parts.append(_svg_level_grid(L, pad + L * (grid_w + 60), grid_y, grid_w, cell_size, N, board))
+    parts.append(
+        '<text x="600" y="600" text-anchor="middle" font-family="Inter, sans-serif" '
+        'font-weight="500" font-size="18" fill="#475569">3D Tic-Tac-Toe · play.cube3</text>'
+        '</svg>'
+    )
     return "".join(parts)
 
 

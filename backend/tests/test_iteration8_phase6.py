@@ -180,7 +180,7 @@ class TestDailySubmit:
         me = r.json()
         assert me is not None
         assert me["date"] == _today_iso()
-        assert me["won"] is True
+        assert me["won"] == True
         assert me["moves"] == 5  # from previous test
 
     def test_daily_me_null_when_unauth(self):

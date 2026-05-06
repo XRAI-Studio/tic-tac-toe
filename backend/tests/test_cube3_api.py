@@ -302,7 +302,7 @@ class TestLogout:
         response = requests.post(f"{BASE_URL}/api/auth/logout")
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") is True
+        assert data.get("ok") == True
         
         print("✓ /api/auth/logout returns ok:true")
 
