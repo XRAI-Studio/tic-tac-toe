@@ -67,6 +67,12 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - Desktop snapshot preserved at `/app/frontend-desktop-v1/` for later download
 - Verified via testing agent iteration 6: 100% frontend pass, 15/18 backend pass (stale auth tokens only)
 
+**Phase 5b (2026-02-19) — Polish + Hardening**
+- **Animated Exploded View** — per-level groups in `CubeBoard` + `useFrame` lerp (factor 6, ~250ms transition); WinLine snaps to target positions on toggle (acceptable since rarely overlaps with the win moment)
+- **Backend Parity Audit** (`/app/BACKEND_PARITY_AUDIT.md`) — Node.js backend hardened with the same `RESULT_TO_KEY` map pattern as Python; both backends now structurally immune to the `losss`-typo class of bugs
+- **Deterministic Test Session Tokens** — `seed.py` now idempotently upserts three 1-year tokens (`test_session_nova`/`orion`/`zen`); `test_credentials.md` rewritten with curl examples
+- Verified via testing agent iteration 7: 100% backend (13/13), 100% frontend
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account
