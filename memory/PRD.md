@@ -79,6 +79,13 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - New `shared` state surfaces "Shared!" feedback on the result-overlay button
 - Architectural comment added in `api.js` explaining the localStorage+httpOnly-cookie auth fallback strategy (prevents future devs from removing the Bearer fallback and breaking Safari ITP users)
 
+**Phase 6 (2026-02-19) — Social/Shareability (final pre-deployment)**
+- **OG/Twitter Card Link Unfurl** — server-rendered SVG cards (1200×630) at `/api/og/replay/{id}.svg` showing the final board state across all 3 levels with X/O/triangle marks colored by player + branded header + "Wins by Player" badge. `/api/share/{id}` returns crawler-friendly HTML with full Open Graph + Twitter Card meta tags + 0s `<meta http-equiv="refresh">` to the SPA route. `useShareReplay` now generates `/api/share/:id` URLs so Twitter, WhatsApp, Discord, Slack, iMessage all render rich preview cards instead of plain links.
+- **Daily Cube** — Wordle-style daily challenge: deterministic seed (md5 of UTC date) selects 1 human + 1 AI starting move from preset arrays. Single attempt per user per day, scored by moves-to-win (lower = better). New `/daily` page with today's challenge card + leaderboard sorted by (won DESC, moves ASC, created_at ASC). Daily banner on Lobby (`Cube3 #N · Today's Challenge`). Navbar entries (desktop + mobile drawer). Wordle-style emoji result string for sharing: `Cube3 #77 — 7/9 ⭐⭐\n🟦⬛🟥\n⬛🟦⬛\n🟥⬛🟦`
+- **`usePresetOpening` hook** — new in `persistenceHooks.js`; injects daily preset moves as initial board state to avoid race with the AI auto-turn effect
+- New endpoints: `/api/og/replay/{id}.svg`, `/api/share/{id}`, `/api/daily/today`, `/api/daily/submit`, `/api/daily/leaderboard`, `/api/daily/me`
+- Verified via testing agent iteration 8: 100% backend (15/15), 100% frontend
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account
