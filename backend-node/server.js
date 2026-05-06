@@ -198,6 +198,10 @@ app.get('/api/users/stats/:user_id', async (req, res, next) => {
     const [rows] = await pool.query(
       'SELECT board_size, mode, result FROM games WHERE user_id = ?', [req.params.user_id]);
 
+    // Defensive: mirror Python's RESULT_TO_KEY map so a future `result` value
+    // (e.g., "forfeit") can't silently get dropped or typo'd into an unused key.
+    const RESULT_TO_KEY = { win: 'wins', loss: 'losses', draw: 'draws' };
+
     const total = rows.length;
     const wins   = rows.filter(g => g.result === 'win').length;
     const losses = rows.filter(g => g.result === 'loss').length;
@@ -208,17 +212,14 @@ app.get('/api/users/stats/:user_id', async (req, res, next) => {
     const byMode  = {};
     for (const g of rows) {
       const b = g.board_size;
+      const bucket = RESULT_TO_KEY[g.result];
       if (byBoard[b]) {
         byBoard[b].games++;
-        if (g.result === 'win')      byBoard[b].wins++;
-        else if (g.result === 'loss') byBoard[b].losses++;
-        else if (g.result === 'draw') byBoard[b].draws++;
+        if (bucket) byBoard[b][bucket]++;
       }
       if (!byMode[g.mode]) byMode[g.mode] = {games:0,wins:0,losses:0,draws:0};
       byMode[g.mode].games++;
-      if (g.result === 'win')       byMode[g.mode].wins++;
-      else if (g.result === 'loss') byMode[g.mode].losses++;
-      else if (g.result === 'draw') byMode[g.mode].draws++;
+      if (bucket) byMode[g.mode][bucket]++;
     }
 
     res.json({
@@ -244,6 +245,9 @@ app.get('/api/leaderboard', async (req, res, next) => {
                    FROM games ${where.length ? 'WHERE ' + where.join(' AND ') : ''}`;
     const [rows] = await pool.query(sql, params);
 
+    // Defensive: mirror Python's RESULT_TO_KEY map.
+    const RESULT_TO_KEY = { win: 'wins', loss: 'losses', draw: 'draws' };
+
     const agg = new Map();
     for (const g of rows) {
       if (!agg.has(g.user_id)) agg.set(g.user_id, {
@@ -252,9 +256,8 @@ app.get('/api/leaderboard', async (req, res, next) => {
       });
       const a = agg.get(g.user_id);
       a.games_played++;
-      if (g.result === 'win')       a.wins++;
-      else if (g.result === 'loss') a.losses++;
-      else if (g.result === 'draw') a.draws++;
+      const bucket = RESULT_TO_KEY[g.result];
+      if (bucket) a[bucket]++;
     }
     const result = [...agg.values()].map(a => {
       const wr = a.games_played ? (a.wins / a.games_played) * 100 : 0;

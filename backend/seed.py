@@ -79,7 +79,34 @@ async def main():
                 "seed": True,
             })
 
+    # ── Test session tokens for the regression suite ────────────────────────
+    # We seed deterministic, named tokens for the first three demo users so
+    # the testing agent can authenticate without re-seeding each run. Tokens
+    # are NOT secrets (test environment only) and are stable across reseeds.
+    test_tokens = [
+        ("nova@cube3.app",  "test_session_nova"),
+        ("orion@cube3.app", "test_session_orion"),
+        ("zen@cube3.app",   "test_session_zen"),
+    ]
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
+    for email, token in test_tokens:
+        uid = user_ids[email]
+        await db.user_sessions.update_one(
+            {"session_token": token},
+            {"$set": {
+                "session_token": token,
+                "user_id": uid,
+                "expires_at": expires_at,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "seed": True,
+            }},
+            upsert=True,
+        )
+
     print(f"Seeded {len(DEMO_USERS)} demo users and games.")
+    print(f"Seeded {len(test_tokens)} test session tokens (1y expiry).")
+    for email, token in test_tokens:
+        print(f"  {email:30s} -> {token}  (user_id: {user_ids[email]})")
 
 
 if __name__ == "__main__":

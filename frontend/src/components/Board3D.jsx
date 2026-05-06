@@ -151,56 +151,87 @@ function CubeBoard({ N, board, currentPlayer, onPlay, winningLine, disabled, exp
   const cellSize = N === 3 ? 1.1 : 0.9;
   const gap = N === 3 ? 0.25 : 0.2;
   const step = cellSize + gap;
-  const explodeExtra = exploded ? (N === 3 ? 1.2 : 1.0) : 0;
+  const EXPLODE_AMOUNT = N === 3 ? 1.2 : 1.0;
   const origin = -((N - 1) * step) / 2;
+  const center = (N - 1) / 2;
 
+  // Base cell positions (no explode offset — explode is applied per-level group via useFrame).
   const positions = useMemo(() => {
     const arr = [];
     for (let l = 0; l < N; l++)
       for (let r = 0; r < N; r++)
         for (let c = 0; c < N; c++) {
-          const x = origin + c * step;
-          const y = origin + l * (step + explodeExtra);
-          const z = origin + r * step;
-          arr.push([x, y, z]);
+          arr.push([origin + c * step, origin + l * step, origin + r * step]);
         }
     return arr;
-  }, [N, step, origin, explodeExtra]);
+  }, [N, step, origin]);
 
   const winSet = useMemo(() => new Set(winningLine || []), [winningLine]);
   const markScale = MARK_SCALE[N] * cellSize;
 
+  // Animated explode scalar — lerps toward target every frame.
+  const animExtraRef = useRef(0);
+  const levelGroupRefs = useRef([]);
+
+  useFrame((_, dt) => {
+    const target = exploded ? EXPLODE_AMOUNT : 0;
+    const k = Math.min(1, dt * 6);
+    animExtraRef.current += (target - animExtraRef.current) * k;
+    const extra = animExtraRef.current;
+    for (let l = 0; l < N; l++) {
+      const g = levelGroupRefs.current[l];
+      if (g) g.position.y = (l - center) * extra;
+    }
+  });
+
+  // WinLine endpoints include the *target* explode offset so the glow sits on the final cell
+  // positions. Cells animate smoothly toward these endpoints; during the ~250ms transition the
+  // line may briefly float ahead of the cells — an acceptable UX tradeoff.
   const winPoints = useMemo(() => {
     if (!winningLine) return null;
+    const target = exploded ? EXPLODE_AMOUNT : 0;
     return winningLine.map((fi) => {
       const p = positions[fi];
-      return [p[0], p[1], p[2]];
+      const level = Math.floor(fi / (N * N));
+      return [p[0], p[1] + (level - center) * target, p[2]];
     });
-  }, [winningLine, positions]);
+  }, [winningLine, positions, exploded, EXPLODE_AMOUNT, center, N]);
+
+  // Bucket cell indices by level so each level can sit inside its own animated group.
+  const cellsByLevel = useMemo(() => {
+    const lv = Array.from({ length: N }, () => []);
+    for (let fi = 0; fi < positions.length; fi++) {
+      lv[Math.floor(fi / (N * N))].push(fi);
+    }
+    return lv;
+  }, [N, positions]);
 
   return (
     <group>
-      {positions.map((pos, fi) => {
-        const level = Math.floor(fi / (N * N));
-        const isActiveLevel = activeLevel == null || activeLevel === level;
-        return (
-          <Cell
-            key={`cell-${fi}`}
-            position={pos}
-            size={cellSize}
-            flatIndex={fi}
-            value={board[fi]}
-            currentPlayer={currentPlayer}
-            onClick={onPlay}
-            hovered={hovered}
-            setHovered={setHovered}
-            disabled={disabled}
-            markScale={markScale}
-            isWinning={winSet.has(fi)}
-            isActiveLevel={isActiveLevel}
-          />
-        );
-      })}
+      {cellsByLevel.map((indices, l) => (
+        <group key={`level-group-${l}`} ref={(el) => { levelGroupRefs.current[l] = el; }}>
+          {indices.map((fi) => {
+            const isActiveLevel = activeLevel == null || activeLevel === l;
+            return (
+              <Cell
+                key={`cell-${fi}`}
+                position={positions[fi]}
+                size={cellSize}
+                flatIndex={fi}
+                value={board[fi]}
+                currentPlayer={currentPlayer}
+                onClick={onPlay}
+                hovered={hovered}
+                setHovered={setHovered}
+                disabled={disabled}
+                markScale={markScale}
+                isWinning={winSet.has(fi)}
+                isActiveLevel={isActiveLevel}
+              />
+            );
+          })}
+        </group>
+      ))}
       {winPoints && <WinLine points={winPoints} />}
     </group>
   );
