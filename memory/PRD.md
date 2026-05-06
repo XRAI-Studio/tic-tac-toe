@@ -54,6 +54,19 @@ Tech stack: React + r3f + Tailwind, FastAPI + MongoDB, JWT/session auth.
 - `DEPLOYMENT_HOSTINGER_BUSINESS.md` — step-by-step guide for Hostinger Business (shared) hosting using built-in Node.js + MySQL
 - README now routes users to the right deploy guide based on their plan
 
+**Phase 5 (2026-02-19) — Mobile / Tablet Optimization**
+- Responsive Play HUD: corner-panels on ≥ `md` (768px), top-bar + bottom-bar + bottom-sheet drawers on mobile
+- New `useIsMobile` hook (matchMedia `(max-width: 767px)`)
+- Adaptive 3D camera (`ResponsiveCamera`): pulls back + widens FOV for portrait / tiny-portrait viewports
+- 44px min touch targets on all buttons (WCAG / Apple HIG)
+- Safe-area insets for iPhone notches / Android nav bars (`env(safe-area-inset-*)`)
+- `touch-action: none` on canvas so trackball gestures don't fight page scroll
+- Navbar hamburger menu for `< sm` with slide-down drawer
+- Lobby resume banner stacks cleanly at 390×844
+- Mobile-bottom-bar positioned at `bottom: calc(72px + env(safe-area-inset-bottom))` to clear the Made-with-Emergent badge (verified ~14px clearance)
+- Desktop snapshot preserved at `/app/frontend-desktop-v1/` for later download
+- Verified via testing agent iteration 6: 100% frontend pass, 15/18 backend pass (stale auth tokens only)
+
 ## Prioritized Backlog (Phase 2)
 - [P0] Undo last move (local games only)
 - [P0] Save / resume unfinished games tied to account
