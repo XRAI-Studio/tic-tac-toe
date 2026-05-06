@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { checkWinner, cloneBoard, emptyBoard, generateLines, isDraw } from "./logic";
 import { pickAIMove } from "./ai";
 import api from "../api";
-import { useAutoSave, useGameRecorder, useResume, useShareReplay } from "./persistenceHooks";
+import { useAutoSave, useGameRecorder, useResume, usePresetOpening, useShareReplay } from "./persistenceHooks";
 
 const HUMAN_ID = 0;
 const AI_ID    = 1;
@@ -33,7 +33,7 @@ function useSoundRefs(sound) {
   return { click, win, draw };
 }
 
-export function useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound }) {
+export function useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound, presetMoves }) {
   const lines = useMemo(() => generateLines(N), [N]);
   const [board, setBoard]           = useState(() => emptyBoard(N));
   const [history, setHistory]       = useState([]);
@@ -46,6 +46,9 @@ export function useGameState({ N, mode, isAI, difficulty, numPlayers, user, resu
 
   // 1) Resume saved game on mount.
   useResume({ enabled: !!resume && !!user, N, mode, setBoard, setHistory });
+
+  // 1b) Apply preset opening (Daily Cube) on mount.
+  usePresetOpening({ presetMoves, N, setBoard, setHistory });
 
   // 2) End-of-game detection.
   useEffect(() => {

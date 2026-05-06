@@ -10,6 +10,7 @@ import Play from "./pages/Play";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import Replay from "./pages/Replay";
+import Daily from "./pages/Daily";
 import AuthCallback from "./pages/AuthCallback";
 
 function AppShell() {
@@ -28,6 +29,7 @@ function AppShell() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/replay/:id" element={<Replay />} />
+        <Route path="/daily" element={<Daily />} />
       </Routes>
     </>
   );

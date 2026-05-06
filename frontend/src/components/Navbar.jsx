@@ -45,6 +45,7 @@ export default function Navbar() {
         {/* Desktop nav links */}
         <div className="hidden sm:flex items-center gap-1">
           <NavLink to="/lobby" className={linkCls} data-testid="nav-lobby">Play</NavLink>
+          <NavLink to="/daily" className={linkCls} data-testid="nav-daily">Daily</NavLink>
           <NavLink to="/leaderboard" className={linkCls} data-testid="nav-leaderboard">Leaderboard</NavLink>
           {user && <NavLink to="/profile" className={linkCls} data-testid="nav-profile">Profile</NavLink>}
         </div>
@@ -96,6 +97,7 @@ export default function Navbar() {
         <div className="sm:hidden border-t border-[#2B4FFF]/10 bg-[rgba(5,5,10,0.92)] backdrop-blur-xl safe-pb" data-testid="nav-mobile-drawer">
           <div className="px-4 py-3 flex flex-col gap-2">
             <NavLink to="/lobby" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-lobby">Play</NavLink>
+            <NavLink to="/daily" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-daily">Daily</NavLink>
             <NavLink to="/leaderboard" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-leaderboard">Leaderboard</NavLink>
             {user && <NavLink to="/profile" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-profile">Profile</NavLink>}
             {user ? (

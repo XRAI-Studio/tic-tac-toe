@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Bot, Users, Cuboid, Zap, Flame, Sparkles, Play as PlayIcon, X as XIcon } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Bot, Users, Cuboid, Zap, Flame, Sparkles, Play as PlayIcon, X as XIcon, Calendar, Target } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api";
@@ -12,15 +12,22 @@ export default function Lobby() {
   const [mode, setMode] = useState(params.get("mode") || "ai_medium");
   const { user } = useAuth();
   const [saved, setSaved] = useState(null);
+  const [daily, setDaily] = useState(null);
+  const [dailyDone, setDailyDone] = useState(null);
 
   useEffect(() => {
-    if (!user) { setSaved(null); return; }
+    api.get("/daily/today").then(({ data }) => setDaily(data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setSaved(null); setDailyDone(null); return; }
     api.get("/games/saved")
       .then(({ data }) => setSaved(data))
       .catch((err) => {
         if (process.env.NODE_ENV !== "production") console.debug("[lobby] saved-game fetch failed:", err?.message);
         setSaved(null);
       });
+    api.get("/daily/me").then(({ data }) => setDailyDone(data)).catch(() => setDailyDone(null));
   }, [user]);
 
   const start = () => navigate(`/play?size=${size}&mode=${mode}`);
@@ -56,6 +63,39 @@ export default function Lobby() {
           </h1>
           <p className="text-slate-400 mt-3 max-w-2xl">Pick a board size and opponent. Matches are saved to your profile when signed in.</p>
         </motion.div>
+
+        {/* Daily Cube banner */}
+        {daily && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 glass rounded-lg p-4 sm:p-5 border-[#2B4FFF]/40 flex flex-wrap items-center gap-3 sm:gap-4 glow-box"
+            data-testid="daily-banner"
+          >
+            <div className="w-11 h-11 rounded border border-[#2B4FFF] text-[#2B4FFF] flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-[180px]">
+              <div className="font-heading uppercase tracking-wider text-white text-sm">
+                Cube3 #{daily.day_number} · Today's Challenge
+              </div>
+              <div className="font-mono text-xs text-slate-400 mt-0.5">
+                {dailyDone
+                  ? (dailyDone.won
+                    ? `You solved it in ${dailyDone.moves} moves · view leaderboard`
+                    : `You played today · view leaderboard`)
+                  : `One puzzle. Same opening as everyone else. Score = moves to win.`}
+              </div>
+            </div>
+            {dailyDone ? (
+              <Link to="/daily" className="btn-ghost inline-flex items-center gap-1.5" data-testid="daily-view-btn">
+                <Target className="w-4 h-4" /> View result
+              </Link>
+            ) : (
+              <Link to="/daily" className="btn-primary" data-testid="daily-play-btn">Play daily</Link>
+            )}
+          </motion.div>
+        )}
 
         {saved && (
           <motion.div

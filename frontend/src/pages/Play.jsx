@@ -6,6 +6,7 @@ import { useGameState } from "../game/useGameState";
 import { useAuth } from "../contexts/AuthContext";
 import { useSound } from "../contexts/SoundContext";
 import { useIsMobile } from "../hooks/useIsMobile";
+import api from "../api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RefreshCw, Layers, RotateCcw, Home, Trophy, Share2, Undo2,
@@ -385,16 +386,62 @@ export default function Play() {
   const isMobile = useIsMobile();
 
   const size = parseInt(params.get("size") || "3", 10);
-  const mode = params.get("mode") || "local_2p";
-  const resume = params.get("resume") === "1";
+  const isDaily = params.get("daily") === "1";
+  // Daily mode locks the configuration: 3×3×3, vs Hard AI, no resume.
+  const mode = isDaily ? "ai_hard" : (params.get("mode") || "local_2p");
+  const resume = !isDaily && params.get("resume") === "1";
   const { isAI, difficulty, numPlayers } = parseMode(mode);
-  const N = size === 4 ? 4 : 3;
+  const N = isDaily ? 3 : (size === 4 ? 4 : 3);
 
-  const game = useGameState({ N, mode, isAI, difficulty, numPlayers, user, resume, sound });
+  // Fetch daily config BEFORE useGameState mounts so the preset opening can be
+  // injected as initial state (otherwise the AI-turn effect would race the preset).
+  const [dailyConfig, setDailyConfig] = useState(null);
+  const [dailyConfigLoaded, setDailyConfigLoaded] = useState(!isDaily);
+  useEffect(() => {
+    if (!isDaily) return;
+    api.get("/daily/today")
+      .then(({ data }) => { setDailyConfig(data); setDailyConfigLoaded(true); })
+      .catch(() => setDailyConfigLoaded(true));
+  }, [isDaily]);
+
+  // Wait for daily config before mounting the game state — otherwise useGameState
+  // initializes with empty board and the preset arrives too late (after AI moves).
+  if (isDaily && !dailyConfigLoaded) {
+    return <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center text-slate-500 font-mono">Loading today's cube…</div>;
+  }
+  return <PlayInner
+    N={N} mode={mode} isAI={isAI} difficulty={difficulty} numPlayers={numPlayers}
+    user={user} resume={resume} sound={sound} isMobile={isMobile}
+    isDaily={isDaily} dailyConfig={dailyConfig}
+  />;
+}
+
+function PlayInner({ N, mode, isAI, difficulty, numPlayers, user, resume, sound, isMobile, isDaily, dailyConfig }) {
+  const game = useGameState({
+    N, mode, isAI, difficulty, numPlayers, user, resume, sound,
+    presetMoves: dailyConfig?.starting_moves,
+  });
   const [exploded, setExploded]       = useState(false);
   const [resetToken, setResetToken]   = useState(0);
   const [activeLevel, setActiveLevel] = useState(null);
   const [sheet, setSheet]             = useState(null); // "menu" | "history" | null
+
+  const [dailySubmitted, setDailySubmitted] = useState(false);
+
+  // Submit daily result once the match concludes.
+  useEffect(() => {
+    if (!isDaily || !dailyConfig || !game.result || dailySubmitted || !user) return;
+    setDailySubmitted(true);
+    const won = !game.result.draw && game.result.winner === HUMAN_ID;
+    api.post("/daily/submit", {
+      date: dailyConfig.date,
+      moves: game.history.length,
+      won,
+      duration_ms: null,
+    }).catch((err) => {
+      if (process.env.NODE_ENV !== "production") console.debug("[daily] submit failed:", err?.message);
+    });
+  }, [isDaily, dailyConfig, game.result, dailySubmitted, user, game.history.length]);
 
   // Keyboard shortcuts: 0 = All levels · 1-4 = lock to that level
   useEffect(() => {

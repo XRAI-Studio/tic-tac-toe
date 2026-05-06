@@ -33,6 +33,16 @@ export function useResume({ enabled, N, mode, setBoard, setHistory }) {
   }, []);
 }
 
+/** Pre-seeds a starting opening (e.g., today's Daily challenge). One-shot, mount-only. */
+export function usePresetOpening({ presetMoves, N, setBoard, setHistory }) {
+  useEffect(() => {
+    if (!presetMoves || presetMoves.length === 0) return;
+    setBoard(rebuildBoard(N, presetMoves));
+    setHistory(presetMoves);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only intentional
+  }, []);
+}
+
 /** Auto-saves the in-progress game (signed-in local games only) ~600ms after each move. */
 export function useAutoSave({ user, isAI, result, N, mode, history }) {
   useEffect(() => {
@@ -102,7 +112,10 @@ export function useShareReplay({ N, mode, isAI, history, result, user }) {
         player_name: user?.name || "Guest",
       };
       const { data } = await api.post("/replays", payload);
-      const url = `${window.location.origin}/replay/${data.replay_id}`;
+      // Use the backend share-landing URL so social-media crawlers (Twitter, FB, WhatsApp,
+      // Discord, Slack) get OG/Twitter meta tags + the SVG card. Humans get a 0s redirect
+      // to the SPA replay route via <meta http-equiv="refresh">.
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/share/${data.replay_id}`;
       setShareUrl(url);
 
       const shareData = {
