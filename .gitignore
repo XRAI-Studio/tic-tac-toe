@@ -1,5 +1,4 @@
-# --- Cube3 additions ---
-backend/.env
+# --- Cube3 ---
 backend-node/.env
 frontend/.env
 frontend/build/
@@ -7,7 +6,11 @@ test_reports/
 .ruff_cache/
 .pytest_cache/
 
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Codex review scratch file
+.codex-verdict.txt
+
+# Stray scaffold git identity (don't commit)
+.gitconfig
 
 # IDE and editors
 .idea/
@@ -15,34 +18,16 @@ test_reports/
 
 # Dependencies
 node_modules/
-/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# Testing
+# Testing / coverage
 /coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
 
 # Production builds
 /build
 dist/
-dist
-
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
 
 # Logs and debug files
 npm-debug.log*
@@ -53,25 +38,15 @@ dump.rdb
 
 # System files
 .DS_Store
-*.pem
 
 # Python
 __pycache__/
-*pyc*
+*.pyc
 venv/
 .venv/
 
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
-
 # Deployment
 .vercel
-
-# Data and databases
-agenthub/agents/youtube/db
 
 # Archive files and large assets
 **/*.zip
@@ -79,40 +54,18 @@ agenthub/agents/youtube/db
 **/*.tar
 **/*.tgz
 *.pack
-*.deb
-*.dylib
 
 # Build caches
 .cache/
 
-memory/test_credentials.md
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
 
-# Mobile development
-android-sdk/frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/1.pack
-frontend/node_modules/.cache/default-development/2.pack
-frontend/node_modules/.cache/default-development/5.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/9.pack
-frontend/node_modules/.cache/default-development/10.pack
-frontend/node_modules/.cache/default-development/11.pack
-frontend/node_modules/.cache/default-development/13.pack
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
-frontend/node_modules/.cache/default-development/4.pack
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
+# ...but DO track example env templates (no secrets). Must come AFTER the .env.* rules.
+!**/.env.example
