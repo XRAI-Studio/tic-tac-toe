@@ -54,3 +54,20 @@ CREATE TABLE IF NOT EXISTS replays (
   player_name  VARCHAR(255) NULL,
   created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Daily Cube results. One best row per (user, day). `challenge_date` is the UTC
+-- calendar day; the JSON field exposed to clients is still called "date".
+CREATE TABLE IF NOT EXISTS daily_results (
+  user_id        VARCHAR(40)  NOT NULL,
+  challenge_date DATE         NOT NULL,
+  day_number     INT          NOT NULL,
+  user_name      VARCHAR(255) NOT NULL,
+  user_picture   TEXT         NULL,
+  moves          INT          NOT NULL,
+  won            TINYINT(1)   NOT NULL,
+  par            INT          NOT NULL,
+  duration_ms    INT          NULL,
+  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, challenge_date),
+  INDEX idx_lb (challenge_date, won, moves, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
