@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Cube3 — 3D Tic-Tac-Toe",
-  "description": "Full-stack 3D tic-tac-toe: classic 3×3×3 and extended 4×4×4 boards, pass-and-play for 2–3 players or AI opponents with alpha-beta pruning, on a drag-rotate 3D board with exploded view and winning-line glow.",
+  "description": "3D tic-tac-toe: classic 3×3×3 and extended 4×4×4 boards, pass-and-play for 2–3 players or AI opponents with alpha-beta pruning, on a drag-rotate 3D board with exploded view and winning-line glow.",
   "owner": "both",
+  "liveUrl": "https://xrai-studio.github.io/tic-tac-toe/",
   "accent": "#ff8a00"
 }
