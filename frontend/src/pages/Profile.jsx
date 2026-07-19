@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api";
+import api, { setDeviceName } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Trophy, Target, TrendingUp, Award, Bot, Users } from "lucide-react";
+import { Pencil, Check } from "lucide-react";
 
 function StatCard({ label, value, accent = false, testid }) {
   return (
@@ -15,10 +15,18 @@ function StatCard({ label, value, accent = false, testid }) {
 }
 
 export default function Profile() {
-  const { user, loading } = useAuth();
+  const { user, setUser, loading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState("");
+
+  const saveName = () => {
+    const updated = setDeviceName(draftName);
+    setUser({ ...user, name: updated.name });
+    setEditing(false);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -46,10 +54,35 @@ export default function Profile() {
           )}
           <div>
             <div className="text-[#2B4FFF] text-xs uppercase tracking-[0.4em] font-heading">Pilot</div>
-            <h1 className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl text-white glow-text">
-              {user.name}
-            </h1>
-            <div className="font-mono text-xs text-slate-400 mt-1">{user.email}</div>
+            {editing ? (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  autoFocus
+                  value={draftName}
+                  maxLength={24}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditing(false); }}
+                  className="bg-transparent border-b-2 border-[#2B4FFF]/60 focus:border-[#2B4FFF] outline-none font-heading font-black uppercase tracking-tighter text-3xl sm:text-4xl text-white w-full max-w-xs"
+                  data-testid="profile-name-input"
+                />
+                <button onClick={saveName} className="tap-target text-[#2B4FFF] hover:text-white transition flex-shrink-0" aria-label="Save name" data-testid="profile-name-save">
+                  <Check className="w-6 h-6" />
+                </button>
+              </div>
+            ) : (
+              <h1 className="group flex items-center gap-3 font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl text-white glow-text">
+                {user.name}
+                <button
+                  onClick={() => { setDraftName(user.name === "Player" ? "" : user.name); setEditing(true); }}
+                  className="tap-target text-slate-500 hover:text-[#2B4FFF] transition opacity-70 hover:opacity-100"
+                  aria-label="Edit name"
+                  data-testid="profile-name-edit"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+              </h1>
+            )}
+            <div className="font-mono text-xs text-slate-400 mt-1">Records saved on this device</div>
           </div>
         </motion.div>
 

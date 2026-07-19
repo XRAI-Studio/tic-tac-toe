@@ -38,7 +38,7 @@ function buildEmojiResult({ dayNumber, moves, won, par, board }) {
     for (let c = 0; c < N; c++) row += emojiCell(board[midOffset + r * N + c]);
     lines.push(row);
   }
-  lines.push(`https://spatial-marks.preview.emergentagent.com/daily`);
+  lines.push(`${window.location.origin}${window.location.pathname}#/daily`);
   return lines.join("\n");
 }
 

@@ -46,9 +46,9 @@ export default function Leaderboard() {
     <div className="min-h-[calc(100vh-3.5rem)] scanline">
       <div className="max-w-6xl mx-auto px-6 py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="text-[#2B4FFF] text-xs uppercase tracking-[0.4em] font-heading mb-2">Global Rankings</div>
+          <div className="text-[#2B4FFF] text-xs uppercase tracking-[0.4em] font-heading mb-2">This device</div>
           <h1 className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl lg:text-6xl text-white glow-text-lg">
-            Leader<span className="text-[#2B4FFF]">board</span>
+            Your <span className="text-[#2B4FFF]">records</span>
           </h1>
         </motion.div>
 
@@ -69,7 +69,7 @@ export default function Leaderboard() {
           {loading && <div className="p-8 text-center text-slate-500 font-mono text-sm">Loading…</div>}
           {!loading && rows.length === 0 && (
             <div className="p-10 text-center">
-              <div className="text-slate-400 font-mono text-sm">No games yet. Be the first to claim a spot.</div>
+              <div className="text-slate-400 font-mono text-sm">No games yet. Play a match to start your record.</div>
               <Link to="/lobby" className="btn-primary mt-4 inline-block">Play now →</Link>
             </div>
           )}

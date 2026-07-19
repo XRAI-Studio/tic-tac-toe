@@ -1,16 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../contexts/AuthContext";
 import { Cuboid, Bot, Users, Trophy, Sparkles, ArrowRight } from "lucide-react";
 
 export default function Landing() {
-  const { user } = useAuth();
-
-  const handleLogin = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + "/lobby";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-  };
 
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden scanline">
@@ -64,13 +56,8 @@ export default function Landing() {
               <Link to="/lobby" className="btn-primary inline-flex items-center gap-2" data-testid="landing-play-btn">
                 Play now <ArrowRight className="w-4 h-4" />
               </Link>
-              {!user && (
-                <button onClick={handleLogin} className="btn-ghost inline-flex items-center gap-2" data-testid="landing-signin-btn">
-                  Sign in to track stats
-                </button>
-              )}
               <Link to="/leaderboard" className="btn-ghost inline-flex items-center gap-2" data-testid="landing-leaderboard-btn">
-                <Trophy className="w-3.5 h-3.5" /> Leaderboard
+                <Trophy className="w-3.5 h-3.5" /> Your records
               </Link>
             </motion.div>
 

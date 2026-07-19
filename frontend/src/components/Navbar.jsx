@@ -3,25 +3,20 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useSound } from "../contexts/SoundContext";
-import { Cuboid, User, LogOut, LogIn, Sun, Moon, Volume2, VolumeX, Menu, X } from "lucide-react";
+import { Cuboid, User, Sun, Moon, Volume2, VolumeX, Menu, X } from "lucide-react";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, toggle } = useTheme();
   const { muted, toggleMute } = useSound();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogin = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + "/lobby";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-  };
-
-  const handleLogout = async () => {
-    await logout();
+  // The player's records live on this device — tapping the name pill opens the
+  // profile, where the display name can be edited.
+  const openProfile = () => {
     setMenuOpen(false);
-    navigate("/");
+    navigate("/profile");
   };
 
   const linkCls = ({ isActive }) =>
@@ -58,27 +53,16 @@ export default function Navbar() {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {user ? (
-            <>
-              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded border border-[#2B4FFF]/20">
-                {user.picture ? (
-                  <img src={user.picture} alt="" className="w-6 h-6 rounded-full" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-[#2B4FFF]/20 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-[#2B4FFF]" />
-                  </div>
-                )}
-                <span className="font-mono text-xs text-white" data-testid="nav-user-name">{user.name}</span>
+          <button onClick={openProfile} className="hidden sm:flex items-center gap-2 px-2 py-1 rounded border border-[#2B4FFF]/20 hover:border-[#2B4FFF]/60 transition" data-testid="nav-user-pill" title="Your profile">
+            {user?.picture ? (
+              <img src={user.picture} alt="" className="w-6 h-6 rounded-full" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-[#2B4FFF]/20 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-[#2B4FFF]" />
               </div>
-              <button onClick={handleLogout} className="hidden sm:flex btn-ghost items-center gap-1.5" data-testid="nav-logout-btn">
-                <LogOut className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sign out</span>
-              </button>
-            </>
-          ) : (
-            <button onClick={handleLogin} className="hidden sm:flex btn-primary items-center gap-2" data-testid="nav-login-btn">
-              <LogIn className="w-4 h-4" /> Sign in
-            </button>
-          )}
+            )}
+            <span className="font-mono text-xs text-white" data-testid="nav-user-name">{user?.name || "Player"}</span>
+          </button>
 
           {/* Mobile hamburger */}
           <button
@@ -99,28 +83,19 @@ export default function Navbar() {
             <NavLink to="/lobby" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-lobby">Play</NavLink>
             <NavLink to="/daily" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-daily">Daily</NavLink>
             <NavLink to="/leaderboard" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-leaderboard">Leaderboard</NavLink>
-            {user && <NavLink to="/profile" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-profile">Profile</NavLink>}
-            {user ? (
-              <div className="pt-2 mt-1 border-t border-[#2B4FFF]/10 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  {user.picture ? (
-                    <img src={user.picture} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#2B4FFF]/20 flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-[#2B4FFF]" />
-                    </div>
-                  )}
-                  <span className="font-mono text-xs text-white truncate">{user.name}</span>
-                </div>
-                <button onClick={handleLogout} className="btn-ghost flex items-center gap-1.5 flex-shrink-0" data-testid="nav-mobile-logout-btn">
-                  <LogOut className="w-3.5 h-3.5" /> Sign out
-                </button>
+            <NavLink to="/profile" className={mobileLinkCls} onClick={() => setMenuOpen(false)} data-testid="nav-mobile-profile">Profile</NavLink>
+            <div className="pt-2 mt-1 border-t border-[#2B4FFF]/10 flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                {user?.picture ? (
+                  <img src={user.picture} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#2B4FFF]/20 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-[#2B4FFF]" />
+                  </div>
+                )}
+                <span className="font-mono text-xs text-white truncate">{user?.name || "Player"}</span>
               </div>
-            ) : (
-              <button onClick={handleLogin} className="btn-primary flex items-center justify-center gap-2 mt-1" data-testid="nav-mobile-login-btn">
-                <LogIn className="w-4 h-4" /> Sign in
-              </button>
-            )}
+            </div>
           </div>
         </div>
       )}

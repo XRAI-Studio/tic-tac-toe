@@ -112,10 +112,9 @@ export function useShareReplay({ N, mode, isAI, history, result, user }) {
         player_name: user?.name || "Guest",
       };
       const { data } = await api.post("/replays", payload);
-      // Use the backend share-landing URL so social-media crawlers (Twitter, FB, WhatsApp,
-      // Discord, Slack) get OG/Twitter meta tags + the SVG card. Humans get a 0s redirect
-      // to the SPA replay route via <meta http-equiv="refresh">.
-      const url = `${process.env.REACT_APP_BACKEND_URL}/api/share/${data.replay_id}`;
+      // The whole replay is encoded into replay_id (no server store), so the
+      // share link is a self-contained hash route that opens on any device.
+      const url = `${window.location.origin}${window.location.pathname}#/replay/${data.replay_id}`;
       setShareUrl(url);
 
       const shareData = {

@@ -61,7 +61,7 @@ export default function Lobby() {
           <h1 className="font-heading font-black uppercase tracking-tighter text-4xl sm:text-5xl lg:text-6xl text-white glow-text-lg">
             Configure your <span className="text-[#2B4FFF]">cube</span>
           </h1>
-          <p className="text-slate-400 mt-3 max-w-2xl">Pick a board size and opponent. Matches are saved to your profile when signed in.</p>
+          <p className="text-slate-400 mt-3 max-w-2xl">Pick a board size and opponent. Your matches and records are saved on this device.</p>
         </motion.div>
 
         {/* Daily Cube banner */}

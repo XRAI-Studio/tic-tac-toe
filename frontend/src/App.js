@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SoundProvider } from "./contexts/SoundContext";
@@ -40,11 +40,11 @@ export default function App() {
     <div className="App min-h-screen">
       <ThemeProvider>
         <SoundProvider>
-          <BrowserRouter>
+          <HashRouter>
             <AuthProvider>
               <AppShell />
             </AuthProvider>
-          </BrowserRouter>
+          </HashRouter>
         </SoundProvider>
       </ThemeProvider>
     </div>
