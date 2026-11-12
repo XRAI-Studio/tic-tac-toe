@@ -69,3 +69,6 @@ credentials.json
 
 # ...but DO track example env templates (no secrets). Must come AFTER the .env.* rules.
 !**/.env.example
+
+# Claude Code scheduler lock (generated)
+.claude/scheduled_tasks.lock
